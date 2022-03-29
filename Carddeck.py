@@ -12,7 +12,6 @@ class Carddeck :
     def __init__(self):
         self.deck = []
         for color in COLORS:
-
             # add number cards
             for value in range(2, 11):
                 self.deck.append(Card(color + str(value), value, color))
