@@ -26,6 +26,7 @@ class Carddeck :
         for card in self.deck:
             print(card)
 
+
 if __name__ == "__main__":
     carddeck = Carddeck()
     carddeck.printDeck()
