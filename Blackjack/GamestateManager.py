@@ -1,24 +1,26 @@
-from Carddeck import Carddeck
-from GreedyAIPlayer import GreedyAIPlayer
-from Constants import PLAYER_ACTIONS
+from .Dealer import Dealer
+from .Cards import Carddeck
+from .GreedyAIPlayer import GreedyAIPlayer
+from .Constants import PLAYER_ACTIONS
 from secrets import choice
 
 class GamestateManager :
-    def __init__(self, player_names_list = ["Player_1"], number_of_carddecks = 1):
+    def __init__(self, ):
         self.player_list = []
         self.playable_carddeck = []
         self.current_player = None
+        self.dealer = Dealer()
 
+    def init_game(self, player_names_list = ["Player_1"], number_of_carddecks = 1):
+        if number_of_carddecks < 1: number_of_carddecks = 1
+        
         for i in range(number_of_carddecks):
             self.playable_carddeck.extend(Carddeck().deck)
 
-        if len(player_names_list) == 0: return
-
-        self.init_players(player_names_list)
-
-    def init_players(self, player_names_list):
+        if len(player_names_list) < 1: player_names_list = ["Player_1"]
         for player_name in player_names_list:
             self.add_player(player_name)
+
     
     def add_player(self, player_name):
         self.player_list.append(GreedyAIPlayer(player_name, 34))
@@ -47,14 +49,15 @@ class GamestateManager :
         self.deal_card_round()
 
         # then one card to the dealer
-        # TODO: Implement dealer correctly
         dealerCard = self.get_random_card()
+        self.dealer.add_card(dealerCard)
 
         # then the second card to every player
         self.deal_card_round()
 
         # then a face down second card to the dealer
         secondDealerCard = self.get_random_card()
+        self.dealer.add_card(secondDealerCard)
         
     
     def deal_card_round(self):
@@ -76,6 +79,11 @@ class GamestateManager :
             turn_value = self.player_turn(player)
             player_round_values.append(turn_value)
 
+        # TODO: Dealer draw cards if hand value below 17
+        while(self.dealer.make_turn()):
+            self.dealer.add_card(self.get_random_card())
+
+        # Evaluate
         self.evaluate_round(player_round_values)
 
 
@@ -94,7 +102,7 @@ class GamestateManager :
             else: return hand_value
 
             # check if player has no options left
-            if hand_value >= 21 or player.money is 0: return hand_value
+            if hand_value >= 21 or player.money == 0: return hand_value
             
             # recursion
             return self.player_turn(player)
@@ -115,12 +123,7 @@ class GamestateManager :
         # TODO: evaluate winners
         for i, hand_value in enumerate(player_round_values):
             print("PLAYER: {} has hand value: {}".format(self.player_list[i].name, hand_value))
-    
 
-
-
-
-# TODO: GAMEFLOW
-if __name__ == "__main__":
-    gamestateManager = GamestateManager(["Baek Jiheon", "Lee Nagyung"], 3)
-    gamestateManager.start_game()
+        print("Dealer cards")
+        for card in self.dealer.cards: print("Dealer card: {}".format(card.value))
+        print("Dealer hand value: {}".format(self.dealer.get_hand_value()))

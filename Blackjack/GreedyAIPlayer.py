@@ -1,5 +1,5 @@
-from Player import Player
-from Constants import PLAYER_ACTIONS
+from .Player import Player
+from .Constants import PLAYER_ACTIONS
 
 class GreedyAIPlayer(Player) :
     def __init__(self, player_name, start_money):

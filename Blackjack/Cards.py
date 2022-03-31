@@ -1,5 +1,13 @@
-from Card import Card
-from Constants import COLORS
+from .Constants import COLORS
+
+class Card :
+    def __init__(self, _name, _value, _color):
+        self.name = _name
+        self.value = _value
+        self.color = _color
+
+    def __repr__(self):
+        return "Card: {}, Value: {}, Color: {}".format(self.name, self.value, self.color)
 
 
 class Carddeck :
