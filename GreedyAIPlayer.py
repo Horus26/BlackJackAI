@@ -1,13 +1,14 @@
-from Player import PLAYER_ACTIONS, Player
+from Player import Player
+from Constants import PLAYER_ACTIONS
 
 class GreedyAIPlayer(Player) :
-    def __init__(self, playerName, startMoney):
-        super(). __init__(playerName, startMoney)
+    def __init__(self, player_name, start_money):
+        super(). __init__(player_name, start_money)
 
-    def makeTurn(self):
+    def make_turn(self):
         print("GreedyAIPlayer Hit")
         return PLAYER_ACTIONS["Hit"]
 
-    def determineBet(self):
+    def determine_bet(self):
         print("GreedyAIPlayer {} determining bet".format(self.name))
         return 1

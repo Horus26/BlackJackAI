@@ -1,11 +1,5 @@
 from Card import Card
-
-COLOR_SPADE = u'\u2660'
-COLOR_CLUB = u'\u2663'
-COLOR_HEART =  u'\u2665'
-COLOR_DIAMOND =  u'\u2666'
-
-COLORS = [COLOR_SPADE, COLOR_CLUB, COLOR_HEART, COLOR_DIAMOND]
+from Constants import COLORS
 
 
 class Carddeck :

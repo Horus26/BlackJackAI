@@ -1,31 +1,24 @@
 from abc import ABC, abstractmethod
-
-
-PLAYER_ACTIONS = {
-    "Hit" : 0,
-    "Stand": 1,
-    "Double": 2,
-    "Split": 3
-}
+from Constants import PLAYER_ACTIONS
 
 class Player(ABC) :
-    def __init__(self, playerName, startMoney):
-        self.name = playerName
-        self.money = startMoney
+    def __init__(self, player_name, start_money):
+        self.name = player_name
+        self.money = start_money
         self.currentBet = 0
         self.cards = []
 
-    def addCard(self, card):
+    def add_card(self, card):
         self.cards.append(card)
     
-    def clearCards(self, card):
+    def clear_cards(self, card):
         self.cards.clear()
 
     
-    def getBet(self):
-        bet = self.determineBet()
+    def get_bet(self):
+        bet = self.determine_bet()
         while(bet is not None and bet > self.money): 
-            bet = self.determineBet()
+            bet = self.determine_bet()
         
         if bet is not None:
             self.money -= bet
@@ -34,14 +27,14 @@ class Player(ABC) :
         return bet
 
     @abstractmethod
-    def determineBet(self):
+    def determine_bet(self):
         pass
 
     @abstractmethod
-    def makeTurn(self):
+    def make_turn(self):
         pass
 
-    def getHandValue(self):
+    def get_hand_value(self):
         return sum([card.value for card in self.cards])
 
 
