@@ -20,8 +20,7 @@ class Carddeck :
             # add image cards
             for i in ["J", "Q", "K"]:
                 self.deck.append(Card(color + i, 10, color))
-            # add ace 
-            # TODO: WATCH OUT HANDLING ACE VALUE 11
+            # add ace as 1 and handle in player
             self.deck.append(Card(color + "A", 1, color))
 
     def printDeck(self):

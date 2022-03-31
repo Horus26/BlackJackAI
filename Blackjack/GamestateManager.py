@@ -79,7 +79,7 @@ class GamestateManager :
             turn_value = self.player_turn(player)
             player_round_values.append(turn_value)
 
-        # TODO: Dealer draw cards if hand value below 17
+        # Dealer draw cards if hand value below 17
         while(self.dealer.make_turn()):
             self.dealer.add_card(self.get_random_card())
 
@@ -89,6 +89,12 @@ class GamestateManager :
 
 
     def player_turn(self, player):
+            # get new hand value
+            hand_value = player.get_hand_value()
+            
+            # check if player has no options left
+            if hand_value >= 21 or player.money == 0: return hand_value
+            
             player_turn_action = player.make_turn()
 
             # get new hand value
@@ -101,8 +107,7 @@ class GamestateManager :
             # else player action stand which results in no action
             else: return hand_value
 
-            # check if player has no options left
-            if hand_value >= 21 or player.money == 0: return hand_value
+
             
             # recursion
             return self.player_turn(player)
@@ -123,6 +128,7 @@ class GamestateManager :
         # TODO: evaluate winners
         for i, hand_value in enumerate(player_round_values):
             print("PLAYER: {} has hand value: {}".format(self.player_list[i].name, hand_value))
+            for card in self.player_list[i].cards: print("Player card: {}".format(card.name))
 
         print("Dealer cards")
         for card in self.dealer.cards: print("Dealer card: {}".format(card.value))

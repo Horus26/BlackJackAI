@@ -6,7 +6,7 @@ class GreedyAIPlayer(Player) :
         super(). __init__(player_name, start_money)
 
     def make_turn(self):
-        print("GreedyAIPlayer Hit")
+        print("{} Hit".format(self.name))
         return PLAYER_ACTIONS["Hit"]
 
     def determine_bet(self):

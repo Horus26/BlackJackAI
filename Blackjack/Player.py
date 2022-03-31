@@ -6,12 +6,16 @@ class Player(ABC) :
         self.money = start_money
         self.currentBet = 0
         self.cards = []
+        self.ace_counts = 0
 
     def add_card(self, card):
+        if(card.value == 1): self.ace_counts += 1
         self.cards.append(card)
     
     def clear_cards(self, card):
         self.cards.clear()
+        self.ace_counts = 0
+        self.currentBet = 0
 
     
     def get_bet(self):
@@ -34,7 +38,15 @@ class Player(ABC) :
         pass
 
     def get_hand_value(self):
-        return sum([card.value for card in self.cards])
+        hand_value = temp_hand_value = sum([card.value for card in self.cards])
+        
+        # handling ace 1 / 11 cases
+        for i in range(self.ace_counts):
+            temp_hand_value += 10
+            if temp_hand_value > 21: break
+            hand_value = temp_hand_value
+        
+        return hand_value
 
 
 
