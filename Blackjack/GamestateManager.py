@@ -128,8 +128,9 @@ class GamestateManager :
         # TODO: evaluate winners
         for i, hand_value in enumerate(player_round_values):
             print("PLAYER: {} has hand value: {}".format(self.player_list[i].name, hand_value))
-            for card in self.player_list[i].cards: print("Player card: {}".format(card.name))
+            self.player_list[i].print_hand()
 
-        print("Dealer cards")
-        for card in self.dealer.cards: print("Dealer card: {}".format(card.value))
+        print()
         print("Dealer hand value: {}".format(self.dealer.get_hand_value()))
+        self.dealer.print_hand()
+        

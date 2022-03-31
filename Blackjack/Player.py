@@ -48,6 +48,10 @@ class Player(ABC) :
         
         return hand_value
 
+    def print_hand(self):
+        print("Printing hand from {}".format(self.name))
+        print(*[card.name for card in self.cards], sep=", ")
+
 
 
 
