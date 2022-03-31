@@ -3,7 +3,9 @@ from abc import ABC, abstractmethod
 
 PLAYER_ACTIONS = {
     "Hit" : 0,
-    "Stand": 1
+    "Stand": 1,
+    "Double": 2,
+    "Split": 3
 }
 
 class Player(ABC) :
@@ -38,6 +40,10 @@ class Player(ABC) :
     @abstractmethod
     def makeTurn(self):
         pass
+
+    def getHandValue(self):
+        return sum([card.value for card in self.cards])
+
 
 
 

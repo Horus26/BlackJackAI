@@ -1,7 +1,6 @@
-from random import getrandbits
-import secrets
 from Carddeck import Carddeck
 from GreedyAIPlayer import GreedyAIPlayer
+from Player import PLAYER_ACTIONS
 from secrets import choice
 
 class GamestateManager :
@@ -16,7 +15,6 @@ class GamestateManager :
         if len(playerNamesList) == 0: return
 
         self.initPlayers(playerNamesList)
-        self.startGame()
 
     def initPlayers(self, playerNamesList):
         for playerName in playerNamesList:
@@ -37,7 +35,6 @@ class GamestateManager :
     def startGame(self):
         self.initRound()
         self.playRound()
-        self.evaluateRound()
 
     def initRound(self):
         # get bets from every player
@@ -50,6 +47,7 @@ class GamestateManager :
         self.dealCardRound()
 
         # then one card to the dealer
+        # TODO: Implement dealer correctly
         dealerCard = self.getRandomCard()
 
         # then the second card to every player
@@ -67,17 +65,56 @@ class GamestateManager :
             player.addCard(card)
 
     def getRandomCard(self):
-        card = secrets.choice(self.playableCarddeck)
+        card = choice(self.playableCarddeck)
         self.playableCarddeck.remove(card)
         return card
 
     def playRound(self):
+        playerRoundValues = []
         # ask each player for their turn
+        for player in self.playerList:
+            turnValue = self.playerTurn(player)
+            playerRoundValues.append(turnValue)
+
+        self.evaluateRound(playerRoundValues)
+
+
+
+    def playerTurn(self, player):
+            playerTurnAction = player.makeTurn()
+
+            # get new hand value
+            handValue = player.getHandValue()
+
+            # evaluate turn
+            if playerTurnAction == PLAYER_ACTIONS["Hit"]: self.hit(player)
+            elif playerTurnAction == PLAYER_ACTIONS["Double"]: self.double(player)
+            elif playerTurnAction == PLAYER_ACTIONS["Split"]: self.split(player)
+            # else player action stand which results in no action
+            else: return handValue
+
+            # check if player has no options left
+            if handValue >= 21 or player.money is 0: return handValue
+            
+            # recursion
+            return self.playerTurn(player)
+
+    def hit(self, player):
+        card = self.getRandomCard()
+        player.addCard(card)
+
+    def double(self):
+        # TODO:
         pass
 
-    def evaluateRound(self):
-        # evaluate winners
+    def split(self):
+        # TODO:
         pass
+
+    def evaluateRound(self, playerRoundValues):
+        # TODO: evaluate winners
+        for i, handValue in enumerate(playerRoundValues):
+            print("PLAYER: {} has hand value: {}".format(self.playerList[i].name, handValue))
     
 
 
@@ -86,4 +123,4 @@ class GamestateManager :
 # TODO: GAMEFLOW
 if __name__ == "__main__":
     gamestateManager = GamestateManager(["Baek Jiheon", "Lee Nagyung"], 3)
-    # gamestateManager.printPlayableCarddeck()
+    gamestateManager.startGame()
