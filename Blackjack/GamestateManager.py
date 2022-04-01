@@ -11,7 +11,7 @@ class GamestateManager :
         self.current_player = None
         self.dealer = Dealer()
 
-    def init_game(self, player_names_list = ["Player_1"], number_of_carddecks = 1):
+    def init_game(self, player_names_list = ["Player_1"], number_of_carddecks = 6):
         if number_of_carddecks < 1: number_of_carddecks = 1
         
         for i in range(number_of_carddecks):
@@ -40,10 +40,10 @@ class GamestateManager :
 
     def init_round(self):
         # get bets from every player
-        for player in self.player_list:
+        for player in list(self.player_list):
             bet = player.get_bet()
             if bet is None: 
-                self.player_list.remove(player)
+                self.remove_player(player)
 
         # deal one card each to every player
         self.deal_card_round()
@@ -73,6 +73,10 @@ class GamestateManager :
         return card
 
     def play_round(self):
+        # check if dealer or a player has blackjack 
+        dealer_blackjack = self.evaluate_dealt_cards()
+        if dealer_blackjack: return
+
         player_round_values = []
         # ask each player for their turn
         for player in self.player_list:
@@ -86,7 +90,25 @@ class GamestateManager :
         # Evaluate
         self.evaluate_round(player_round_values)
 
+    def evaluate_dealt_cards(self):
+        # get dealer hand value
+        dealer_base_hand_value = self.dealer.get_hand_value()
+        dealer_blackjack = True if dealer_base_hand_value == 21 else False
 
+        # get player hand values that are 21
+        for player in self.player_list:
+            player_blackjack = player.get_hand_value() == 21
+            if dealer_blackjack and not player_blackjack:
+                player.lose_round()
+            elif dealer_blackjack and player_blackjack:
+                player.tie_round()
+            elif player_blackjack:
+                player.dealt_cards_blackjack()
+
+
+        return dealer_blackjack
+
+            
 
     def player_turn(self, player):
             # get new hand value
@@ -95,20 +117,16 @@ class GamestateManager :
             # check if player has no options left
             if hand_value >= 21 or player.money == 0: return hand_value
             
+            # ask player for turn action
             player_turn_action = player.make_turn()
-
-            # get new hand value
-            hand_value = player.get_hand_value()
 
             # evaluate turn
             if player_turn_action == PLAYER_ACTIONS["Hit"]: self.hit(player)
             elif player_turn_action == PLAYER_ACTIONS["Double"]: self.double(player)
             elif player_turn_action == PLAYER_ACTIONS["Split"]: self.split(player)
             # else player action stand which results in no action
-            else: return hand_value
+            else: return player.get_hand_value()
 
-
-            
             # recursion
             return self.player_turn(player)
 
@@ -129,8 +147,13 @@ class GamestateManager :
         for i, hand_value in enumerate(player_round_values):
             print("PLAYER: {} has hand value: {}".format(self.player_list[i].name, hand_value))
             self.player_list[i].print_hand()
+            
+            # check if player was already paid in case of an instant blackjack with two cards
+            if hand_value == 21 and len(self.player_list[i].cards) == 2:
+                continue
+
+            # TODO: Cash out
 
         print()
         print("Dealer hand value: {}".format(self.dealer.get_hand_value()))
         self.dealer.print_hand()
-        

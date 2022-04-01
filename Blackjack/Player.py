@@ -52,6 +52,17 @@ class Player(ABC) :
         print("Printing hand from {}".format(self.name))
         print(*[card.name for card in self.cards], sep=", ")
 
+    def lose_round(self):
+        self.clear_cards()
+    
+    def tie_round(self):
+        self.money += self.currentBet
+        self.clear_cards()
+
+    def dealt_cards_blackjack(self):
+        self.money += round(self.currentBet * 1.5, 2)
+        self.clear_cards
+
 
 
 
