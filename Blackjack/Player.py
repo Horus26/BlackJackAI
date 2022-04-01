@@ -4,7 +4,7 @@ class Player(ABC) :
     def __init__(self, player_name, start_money):
         self.name = player_name
         self.money = start_money
-        self.currentBet = 0
+        self.current_bet = 0
         self.cards = []
         self.ace_counts = 0
 
@@ -15,7 +15,7 @@ class Player(ABC) :
     def clear_cards(self, card):
         self.cards.clear()
         self.ace_counts = 0
-        self.currentBet = 0
+        self.current_bet = 0
 
     
     def get_bet(self):
@@ -26,7 +26,7 @@ class Player(ABC) :
         if bet is not None:
             self.money -= bet
             
-        self.currentBet = bet
+        self.current_bet = bet
         return bet
 
     @abstractmethod
@@ -38,11 +38,13 @@ class Player(ABC) :
         pass
 
     def get_hand_value(self):
+        # find best sum of cards in hand that is below 21 if possible
         hand_value = temp_hand_value = sum([card.value for card in self.cards])
         
         # handling ace 1 / 11 cases
         for i in range(self.ace_counts):
             temp_hand_value += 10
+                
             if temp_hand_value > 21: break
             hand_value = temp_hand_value
         
@@ -56,12 +58,22 @@ class Player(ABC) :
         self.clear_cards()
     
     def tie_round(self):
-        self.money += self.currentBet
+        self.money += self.current_bet
         self.clear_cards()
 
     def dealt_cards_blackjack(self):
-        self.money += round(self.currentBet * 1.5, 2)
+        self.money += round(self.current_bet * 1.5, 2)
         self.clear_cards
+
+    def init_split(self):
+        # check if all requirements are fullfilled for split
+        if self.money < self.current_bet or len(self.cards) != 2 or self.cards[0].value != self.cards[1].value:
+            return (False, None)
+        else:
+            self.money -= self.current_bet
+            card = self.cards[1]
+            self.cards.remove(card)
+            return (True, card)
 
 
 

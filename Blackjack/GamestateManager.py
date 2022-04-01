@@ -1,3 +1,5 @@
+from posixpath import split
+from .SplitTempPlayer import SplitTempPlayer
 from .Dealer import Dealer
 from .Cards import Carddeck
 from .GreedyAIPlayer import GreedyAIPlayer
@@ -10,6 +12,7 @@ class GamestateManager :
         self.playable_carddeck = []
         self.current_player = None
         self.dealer = Dealer()
+        self.split_player_round_dict = {}
 
     def init_game(self, player_names_list = ["Player_1"], number_of_carddecks = 6):
         if number_of_carddecks < 1: number_of_carddecks = 1
@@ -110,22 +113,27 @@ class GamestateManager :
 
             
 
-    def player_turn(self, player):
+    def player_turn(self, player, split_allowed = True):
             # get new hand value
             hand_value = player.get_hand_value()
             
             # check if player has no options left
             if hand_value >= 21 or player.money == 0: return hand_value
             
-            # ask player for turn action
-            player_turn_action = player.make_turn()
+            # use while for waiting for a valid turn to reduce number of recursions
+            valid_turn = False
+            while(not valid_turn):
+                # ask player for turn action
+                player_turn_action = player.make_turn()
 
-            # evaluate turn
-            if player_turn_action == PLAYER_ACTIONS["Hit"]: self.hit(player)
-            elif player_turn_action == PLAYER_ACTIONS["Double"]: self.double(player)
-            elif player_turn_action == PLAYER_ACTIONS["Split"]: self.split(player)
-            # else player action stand which results in no action
-            else: return player.get_hand_value()
+                # evaluate turn
+                if player_turn_action == PLAYER_ACTIONS["Hit"]: valid_turn = self.hit(player)
+                elif player_turn_action == PLAYER_ACTIONS["Double"]: valid_turn = self.double(player)
+                 # two seperate if statements because of else case
+                elif player_turn_action == PLAYER_ACTIONS["Split"]: 
+                    if split_allowed: valid_turn = self.split(player)
+                # else player action stand which results in no action
+                else: return player.get_hand_value()
 
             # recursion
             return self.player_turn(player)
@@ -133,14 +141,41 @@ class GamestateManager :
     def hit(self, player):
         card = self.get_random_card()
         player.add_card(card)
+        return True
 
-    def double(self):
+    def double(self, player):
         # TODO:
         pass
 
-    def split(self):
-        # TODO:
-        pass
+    def split(self, player):
+        (valid, card) = player.init_split()
+        if not valid: return False
+
+        # player turn with new hand
+        split_temp_player = SplitTempPlayer(player, card)
+        
+        # add second card to original and split hand
+        player.add_card(self.get_random_card())
+        split_temp_player.add_card(self.get_random_card())
+
+        # add new entry to split_player_round_dict for referencing split player in evaluation
+        #  TODO: USE IN EVALUATION
+        self.split_player_round_dict[str(self.player_list.index(player))] = split_temp_player
+
+        # check if two aces were split -> then player must stand (no hit/split/double down allowed)
+        # it does not matter whether the new hand is a blackjack
+        if card.value == 1:
+            return True
+        # else hit and double down allowed
+        else:
+            self.player_turn(split_temp_player, split_allowed=False)
+
+
+        # finish player turn with original hand
+        
+        return True
+        # TODO: FINISH
+
 
     def evaluate_round(self, player_round_values):
         # TODO: evaluate winners
@@ -157,3 +192,6 @@ class GamestateManager :
         print()
         print("Dealer hand value: {}".format(self.dealer.get_hand_value()))
         self.dealer.print_hand()
+
+        # # TODO: outsource to clean up
+        self.split_player_round_dict.clear()
