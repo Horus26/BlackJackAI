@@ -1,3 +1,4 @@
+from .CommandLinePlayer import CommandLinePlayer
 from .SplitTempPlayer import SplitTempPlayer
 from .Dealer import Dealer
 from .Cards import Carddeck
@@ -24,6 +25,9 @@ class GamestateManager :
         for player_name in player_names_list:
             self.add_player(player_name)
 
+        # TODO: DEBUG ENTFERNEN
+        self.player_list.append(CommandLinePlayer("Human player", 34))
+
 
     
     def add_player(self, player_name):
@@ -44,10 +48,10 @@ class GamestateManager :
         self.play_round()
         self.clean_round()
 
-    def get_bet(self, player):
-        bet = player.get_bet()
-        if bet is None: 
-            self.remove_player(player)
+    # def get_bet(self, player):
+    #     bet = player.get_bet()
+    #     if bet is None: 
+    #         self.remove_player(player)
 
 
     def init_round(self):
@@ -60,6 +64,8 @@ class GamestateManager :
                 if (isinstance(bet, int) or isinstance(bet, float)) and bet >= self.minimum_bet:
                     player.current_bet = bet
                     valid_bet = True
+                else:
+                    print("Invalid bet: {}".format(bet))
 
 
         # deal one card each to every player
@@ -103,6 +109,7 @@ class GamestateManager :
             turn_value = self.player_turn(player)
             if turn_value > 21:
                 # important that player can already lose here as it can affect other players
+                print("Player {} bust".format(player.name))
                 player.lose_round()
                 self.current_playing_players.remove(player)
                 continue
@@ -209,24 +216,27 @@ class GamestateManager :
     def evaluate_round(self):
         
         dealer_hand_value = self.dealer.get_hand_value()
-
-        for player in self.current_playing_players:
-            hand_value = player.get_hand_value()
-            print("PLAYER: {} has hand value: {}".format(player.name, hand_value))
-            player.print_hand()
-            
-            # check if player was already paid in case of an instant blackjack with two cards or busts
-            if (hand_value == 21 and len(player.cards) == 2):
-                print("Player no cashout: {} with hand value: {}".format(player.name, hand_value))
-                continue
-            elif hand_value > 21:
-                player.lose_round()
-            elif hand_value > dealer_hand_value:
+        if dealer_hand_value > 21:
+            for player in self.current_playing_players:
                 player.win_round()
-            elif hand_value == dealer_hand_value:
-                player.tie_round()
-            else:
-                player.lose_round()
+        else:
+            for player in self.current_playing_players:
+                hand_value = player.get_hand_value()
+                print("PLAYER: {} has hand value: {}".format(player.name, hand_value))
+                player.print_hand()
+                
+                # check if player was already paid in case of an instant blackjack with two cards or busts
+                if (hand_value == 21 and len(player.cards) == 2):
+                    print("Player no cashout: {} with hand value: {}".format(player.name, hand_value))
+                    continue
+                elif hand_value > 21:
+                    player.lose_round()
+                elif hand_value > dealer_hand_value:
+                    player.win_round()
+                elif hand_value == dealer_hand_value:
+                    player.tie_round()
+                else:
+                    player.lose_round()
 
         for split_player in self.split_player_round_dict:
             hand_value = split_player.get_hand_value()
