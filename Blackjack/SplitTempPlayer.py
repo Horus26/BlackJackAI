@@ -9,13 +9,17 @@ class SplitTempPlayer(Player) :
         self.cards.append(card)
 
     def make_turn(self):
-        print("{} Hit".format(self.name))
+        # print("{} Hit".format(self.name))
         return PLAYER_ACTIONS["Hit"]
 
     def determine_bet(self):
-        print("SplitTempPlayer {} determining bet".format(self.name))
-        return 1
+        bet = 1
+        print("SplitTempPlayer {} determining bet: {}".format(self.name, bet))
+        return bet
     
-    def dealt_cards_blackjack(self):
-        # blackjack after splitting does not count as direct dealt blackjack
-        pass
+    def tie_round(self):
+        self.parent_player.money += self.current_bet
+    
+    def win_round(self):
+        self.parent_player.money += 2 * self.current_bet
+

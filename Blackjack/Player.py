@@ -12,7 +12,7 @@ class Player(ABC) :
         if(card.value == 1): self.ace_counts += 1
         self.cards.append(card)
     
-    def clear_cards(self, card):
+    def clear_cards(self):
         self.cards.clear()
         self.ace_counts = 0
         self.current_bet = 0
@@ -55,15 +55,23 @@ class Player(ABC) :
         print(*[card.name for card in self.cards], sep=", ")
 
     def lose_round(self):
+        print("Player {} losing: {}".format(self.name, self.current_bet))
         self.clear_cards()
     
     def tie_round(self):
+        print("Player {} tie --> keeping bet: {}".format(self.name, self.current_bet))
         self.money += self.current_bet
         self.clear_cards()
 
     def dealt_cards_blackjack(self):
+        print("Player {} instant blackjack --> winning: {}".format(self.name, self.current_bet*2.5))
         self.money += round(self.current_bet * 1.5, 2)
-        self.clear_cards
+        self.clear_cards()
+    
+    def win_round(self):
+        print("Player {} winning: {}".format(self.name, self.current_bet*2))
+        self.money += 2 * self.current_bet
+        self.clear_cards()
 
     def init_split(self):
         # check if all requirements are fullfilled for split
