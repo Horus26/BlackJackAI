@@ -24,6 +24,9 @@ class CommandLinePlayer(Player) :
         while keyboard_input is None:
             try:
                 keyboard_input = float(input("Bet: "))
+                if keyboard_input > self.money:
+                    print("Invalid Input. You do not have this much money.")
+                    keyboard_input = None
             except ValueError:
                 print ("Error: '{}' is not a valid float!".format(keyboard_input))
         return keyboard_input
@@ -31,7 +34,6 @@ class CommandLinePlayer(Player) :
         
 
     def handle_action_input(self):
-        print("Current hand:")
         self.print_hand()
         print("Waiting for user input: h=hit, s=stand, p=split, d=double")
         keyboard_input = None

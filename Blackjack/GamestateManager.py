@@ -7,15 +7,17 @@ from .Constants import PLAYER_ACTIONS
 from secrets import choice
 
 class GamestateManager :
-    def __init__(self, ):
+    def __init__(self):
         self.player_list = []
         self.playable_carddeck = []
         self.current_playing_players = []
         self.dealer = Dealer()
-        self.split_player_round_dict = []
+        self.split_player_round_list = []
         self.minimum_bet = 1
 
-    def init_game(self, player_names_list = ["Player_1"], number_of_carddecks = 6):
+    def init_game(self, player_names_list = ["Player_1"], number_of_carddecks = 6, minimum_bet = 1):
+        self.minimum_bet = minimum_bet if minimum_bet >= 1 else 1
+        
         if number_of_carddecks < 1: number_of_carddecks = 1
         
         for i in range(number_of_carddecks):
@@ -63,6 +65,7 @@ class GamestateManager :
                 bet = player.get_bet()
                 if (isinstance(bet, int) or isinstance(bet, float)) and bet >= self.minimum_bet:
                     player.current_bet = bet
+                    player.money -= bet
                     valid_bet = True
                 else:
                     print("Invalid bet: {}".format(bet))
@@ -81,6 +84,21 @@ class GamestateManager :
         # then a face down second card to the dealer
         secondDealerCard = self.get_random_card()
         self.dealer.add_card(secondDealerCard)
+
+        self.print_gamestate()
+
+    
+    def print_gamestate(self):
+        print("\nPrinting Gamestate")
+        print("Dealer hand")
+        self.dealer.print_hand()
+
+        print("Player hands")
+        for player in self.current_playing_players:
+            player.print_hand()
+
+        print()
+
         
     
     def deal_card_round(self):
@@ -99,13 +117,19 @@ class GamestateManager :
         # check if dealer or a player has blackjack 
         dealer_blackjack = self.evaluate_dealt_cards()
         if dealer_blackjack: 
-            print("Dealer blackjack")
             return
 
         # player_round_values = []
         # ask each player for their turn
         # use self.player_list instead of self.current_playing_players as players can go bust in their turn and get removed from self.current_playing_players
+        print("PLAYING ROUND")
         for player in self.player_list:
+            # filter instant blackjack players
+            if player.get_hand_value() == 21:
+                continue
+
+            print("\nPLAYERS TURN: {}".format(player.name))
+
             turn_value = self.player_turn(player)
             if turn_value > 21:
                 # important that player can already lose here as it can affect other players
@@ -113,9 +137,6 @@ class GamestateManager :
                 player.lose_round()
                 self.current_playing_players.remove(player)
                 continue
-
-            # only keep track of players ending their turn without going bust
-            # player_round_values.append(turn_value)
 
         # Dealer draw cards if hand value below 17
         while(self.dealer.make_turn()):
@@ -128,16 +149,21 @@ class GamestateManager :
         # get dealer hand value
         dealer_base_hand_value = self.dealer.get_hand_value()
         dealer_blackjack = True if dealer_base_hand_value == 21 else False
+        if (dealer_blackjack):
+            print("DEALER BLACKJACK")
+            self.dealer.print_hand(second_card_visible=True)
 
         # get player hand values that are 21
-        for player in self.current_playing_players:
+        for player in self.player_list:
             player_blackjack = (player.get_hand_value() == 21)
             if dealer_blackjack and not player_blackjack:
+                
                 player.lose_round()
             elif dealer_blackjack and player_blackjack:
                 player.tie_round()
             elif player_blackjack:
                 player.dealt_cards_blackjack()
+                self.current_playing_players.remove(player)
 
 
         return dealer_blackjack
@@ -149,7 +175,7 @@ class GamestateManager :
             hand_value = player.get_hand_value()
             
             # check if player has no options left
-            if hand_value >= 21 or player.money == 0: return hand_value
+            if hand_value >= 21: return hand_value
             
             # use while for waiting for a valid turn to reduce number of recursions
             valid_turn = False
@@ -163,7 +189,8 @@ class GamestateManager :
                  # two seperate if statements because of else case
                 elif player_turn_action == PLAYER_ACTIONS["Split"]: 
                     if split_allowed: valid_turn = self.split(player)
-                    split_allowed = False
+                    else: print("Resplitting not allowed")
+                    if valid_turn: split_allowed = False
                 # else player action stand which results in no action
                 else: return player.get_hand_value()
 
@@ -176,16 +203,20 @@ class GamestateManager :
 
         print("Player {} hit".format(player.name))
         player.print_hand()
-        print("New hand value: {}".format(player.get_hand_value()))
         return True
 
     def double(self, player):
-        # TODO:
-        pass
+        valid = player.init_double()
+        if not valid:
+            print("Double not possible")
+            return False
+        # TODO: FINISH
 
     def split(self, player):
         (valid, card) = player.init_split()
-        if not valid: return False
+        if not valid: 
+            print("Split not possible")
+            return False
 
         # player turn with new hand
         split_temp_player = SplitTempPlayer(player, card)
@@ -194,42 +225,53 @@ class GamestateManager :
         player.add_card(self.get_random_card())
         split_temp_player.add_card(self.get_random_card())
 
+        print("Player {} splitting".format(player.name))
+        print("Splitted hand: ")
+        split_temp_player.print_hand()
+        print("Original new hand: ")
+        player.print_hand()
+
         # add new entry to split_player_round_dict for referencing split player in evaluation
-        self.split_player_round_dict.append(split_temp_player)
+        self.split_player_round_list.append(split_temp_player)
 
         # check if two aces were split -> then player must stand (no hit/split/double down allowed)
         # it does not matter whether the new hand is a blackjack
         if card.value == 1:
+            print("Aces were split --> player must stand")
             return True
         # else hit and double down allowed
         else:
+            print("Split players turn:")
             hand_value = self.player_turn(split_temp_player, split_allowed=False)
             # handle if split hand goes bust
             if hand_value > 21:
-                self.split_player_round_dict.pop(str(self.current_playing_players.index(player)), None)
+                split_temp_player.lose_round()
+                self.split_player_round_list.remove(split_temp_player)
             
+            print("Original players hand turn: ")
         # finish player turn with original hand in original player_turn method (that called split)
         return True
         
 
 
     def evaluate_round(self):
-        
+        print("\nEVALUATION")
         dealer_hand_value = self.dealer.get_hand_value()
+        print("Dealer hand value: {}".format(dealer_hand_value))
+        self.dealer.print_hand(second_card_visible=True)
+
+        # check if dealers busts and therefore all remaining players win
         if dealer_hand_value > 21:
-            for player in self.current_playing_players:
+            for player in self.current_playing_players + self.split_player_round_list:
                 player.win_round()
         else:
-            for player in self.current_playing_players:
+            # check for every player against dealer
+            for player in self.current_playing_players + self.split_player_round_list:
                 hand_value = player.get_hand_value()
-                print("PLAYER: {} has hand value: {}".format(player.name, hand_value))
+                print("\nPLAYER: {} has hand value: {}".format(player.name, hand_value))
                 player.print_hand()
                 
-                # check if player was already paid in case of an instant blackjack with two cards or busts
-                if (hand_value == 21 and len(player.cards) == 2):
-                    print("Player no cashout: {} with hand value: {}".format(player.name, hand_value))
-                    continue
-                elif hand_value > 21:
+                if hand_value > 21:
                     player.lose_round()
                 elif hand_value > dealer_hand_value:
                     player.win_round()
@@ -238,33 +280,22 @@ class GamestateManager :
                 else:
                     player.lose_round()
 
-        for split_player in self.split_player_round_dict:
-            hand_value = split_player.get_hand_value()
-            print("SPLIT PLAYER: {} has hand value: {}".format(split_player.name, hand_value))
-            split_player.print_hand()
-            if hand_value > 21:
-                split_player.lose_round()
-            elif hand_value > dealer_hand_value:
-                split_player.win_round()
-            elif hand_value == dealer_hand_value:
-                split_player.tie_round()
-            else:
-                split_player.lose_round()
 
+        if len(self.split_player_round_list) + len(self.current_playing_players) == 0:
+            print("No players remaining that did not go bust")
 
         print()
-        print("Dealer hand value: {}".format(self.dealer.get_hand_value()))
-        self.dealer.print_hand()
+
 
         
 
     def clean_round(self):
-        self.split_player_round_dict.clear()
+        self.split_player_round_list.clear()
         for player in list(self.player_list):
             if player.money == 0:
                 self.remove_player(player)
                 continue
-            print("{} money left: {}".format(player.name, player.money))
+            print("{} money: {}".format(player.name, player.money))
             player.clear_cards()
         
         # prepare player list for next round

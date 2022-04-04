@@ -23,10 +23,6 @@ class Player(ABC) :
         while(bet is not None and bet > self.money): 
             bet = self.determine_bet()
         
-        if bet is not None:
-            self.money -= bet
-            
-        self.current_bet = bet
         return bet
 
     @abstractmethod
@@ -51,11 +47,12 @@ class Player(ABC) :
         return hand_value
 
     def print_hand(self):
-        print("Printing hand from {}".format(self.name))
+        print("Hand from {}".format(self.name))
         print(*[card.name for card in self.cards], sep=", ")
+        print("Hand value: {}\n".format(self.get_hand_value()))
 
     def lose_round(self):
-        print("Player {} losing: {}".format(self.name, self.current_bet))
+        print("Player {} losing bet: {}".format(self.name, self.current_bet))
         self.clear_cards()
     
     def tie_round(self):
@@ -65,23 +62,27 @@ class Player(ABC) :
 
     def dealt_cards_blackjack(self):
         print("Player {} instant blackjack --> winning: {}".format(self.name, self.current_bet*2.5))
-        self.money += round(self.current_bet * 1.5, 2)
-        self.clear_cards()
+        self.money += round(self.current_bet * 2.5, 2)
     
     def win_round(self):
         print("Player {} winning: {}".format(self.name, self.current_bet*2))
-        self.money += 2 * self.current_bet
+        self.money += (2 * self.current_bet)
         self.clear_cards()
 
     def init_split(self):
         # check if all requirements are fullfilled for split
-        if self.money < self.current_bet or len(self.cards) != 2 or self.cards[0].value != self.cards[1].value:
+        if self.money < self.current_bet or len(self.cards) != 2 or self.cards[0].image_value != self.cards[1].image_value:
             return (False, None)
         else:
             self.money -= self.current_bet
             card = self.cards[1]
             self.cards.remove(card)
             return (True, card)
+    
+    def init_double(self):
+        if self.money < self.current_bet:
+            return False
+            #  TODO: FINISH
 
 
 
