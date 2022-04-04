@@ -80,9 +80,27 @@ class Player(ABC) :
             return (True, card)
     
     def init_double(self):
-        if self.money < self.current_bet:
+        # check for cards dealt total of 9, 10 or 11
+        double_total_allowed = False
+        temp_hand_value = sum([card.value for card in self.cards])
+        if temp_hand_value in [9,10,11]: 
+            double_total_allowed = True
+        else:
+            # handling ace 1 / 11 cases
+            for i in range(self.ace_counts):
+                temp_hand_value += 10   
+                if temp_hand_value in [9,10,11]: 
+                    double_total_allowed = True
+                    break
+
+        # only allow doubling down if there is enough money and cards dealt total is 9, 10 or 11 
+        if self.money < self.current_bet or not double_total_allowed:
             return False
-            #  TODO: FINISH
+        else:
+            self.money -= self.current_bet
+            self.current_bet *= 2
+        
+        return True
 
 
 

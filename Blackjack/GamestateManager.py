@@ -179,13 +179,18 @@ class GamestateManager :
             
             # use while for waiting for a valid turn to reduce number of recursions
             valid_turn = False
+            double_down = False
             while(not valid_turn):
                 # ask player for turn action
                 player_turn_action = player.make_turn()
 
                 # evaluate turn
                 if player_turn_action == PLAYER_ACTIONS["Hit"]: valid_turn = self.hit(player)
-                elif player_turn_action == PLAYER_ACTIONS["Double"]: valid_turn = self.double(player)
+                elif player_turn_action == PLAYER_ACTIONS["Double"]: 
+                    # after double down player gets one card and must stand after
+                    valid_turn = self.double(player)
+                    if valid_turn: return player.get_hand_value()
+
                  # two seperate if statements because of else case
                 elif player_turn_action == PLAYER_ACTIONS["Split"]: 
                     if split_allowed: valid_turn = self.split(player)
@@ -193,6 +198,8 @@ class GamestateManager :
                     if valid_turn: split_allowed = False
                 # else player action stand which results in no action
                 else: return player.get_hand_value()
+
+            
 
             # recursion
             return self.player_turn(player, split_allowed)
@@ -210,7 +217,12 @@ class GamestateManager :
         if not valid:
             print("Double not possible")
             return False
-        # TODO: FINISH
+        
+        print("{} doubling down".format(player.name))
+        player.add_card(self.get_random_card())
+        player.print_hand()
+        return True
+
 
     def split(self, player):
         (valid, card) = player.init_split()
