@@ -18,6 +18,9 @@ class GamestateManagerTest(unittest.TestCase):
         # Assert
         self.assertEqual(len(self.gamestate_manager.player_list), 2)
         self.assertEqual(len(self.gamestate_manager.playable_carddeck), 52)
+    
+    def tearDown(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()

@@ -15,7 +15,7 @@ class GamestateManager :
         self.split_player_round_list = []
         self.minimum_bet = 1
 
-    def init_game(self, player_names_list = ["Player_1"], number_of_carddecks = 6, minimum_bet = 1):
+    def init_game(self, player_objects_list, number_of_carddecks = 6, minimum_bet = 1):
         self.minimum_bet = minimum_bet if minimum_bet >= 1 else 1
         
         if number_of_carddecks < 1: number_of_carddecks = 1
@@ -23,17 +23,16 @@ class GamestateManager :
         for i in range(number_of_carddecks):
             self.playable_carddeck.extend(Carddeck().deck)
 
-        if len(player_names_list) < 1: player_names_list = ["Player_1"]
-        for player_name in player_names_list:
-            self.add_player(player_name)
+        if len(player_objects_list) < 1: return False
+        for player_object in player_objects_list:
+            self.add_player(player_object)
 
-        # TODO: DEBUG ENTFERNEN
-        self.player_list.append(CommandLinePlayer("Human player", 34))
+        return True
 
 
     
-    def add_player(self, player_name):
-        self.player_list.append(GreedyAIPlayer(player_name, 34))
+    def add_player(self, player_object):
+        self.player_list.append(player_object)
 
     def remove_player(self, player):
         if player in self.player_list:
