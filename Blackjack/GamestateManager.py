@@ -30,7 +30,6 @@ class GamestateManager :
         return True
 
 
-    
     def add_player(self, player_object):
         self.player_list.append(player_object)
 
