@@ -17,12 +17,6 @@ class GamestateManagerTest(unittest.TestCase):
         self.gamestate_manager.init_game(player_list, number_of_carddecks)
 
     def test_init_game(self):
-        # Arrange
-
-        
-        # Act
-        
-
         # Assert
         self.assertEqual(len(self.gamestate_manager.player_list), 3)
         self.assertEqual(len(self.gamestate_manager.playable_carddeck), 52)
@@ -30,6 +24,8 @@ class GamestateManagerTest(unittest.TestCase):
     
     def test_init_round(self):
         # check that bets are taken from every player and cards are dealt
+        
+        # Arrange
         player_money_before = []
         player_money_after = []
         carddeck_card_number = len(self.gamestate_manager.playable_carddeck)
