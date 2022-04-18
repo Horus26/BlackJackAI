@@ -9,7 +9,7 @@ def main():
     # game settings
     player_list = []
     start_money = 34
-    ai_player_name_list = ["Baek Jiheon", "Lee Nagyung", "Lee Chaeyoung", "Romsae", "Park Jiwon", "Jang Gyuri", "Roh Jisun", "Song Hayoung"]
+    ai_player_name_list = ["Baek Jiheon", "Lee Nagyung", "Lee Chaeyoung", "Romsae", "Park Jiwon", "Jang Gyuri", "Roh Jisun", "Song Hayoung", "Lee Seoyeon"]
     for ai_player_name in ai_player_name_list:
         player_list.append(GreedyAIPlayer(ai_player_name, start_money))
     

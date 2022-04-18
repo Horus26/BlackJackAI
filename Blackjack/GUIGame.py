@@ -1,4 +1,5 @@
 import math
+from turtle import position
 import arcade
 from .GUIConstants import get_gui_constants, VERTICAL_MARGIN_PERCENT, CARD_SUITS, CARD_VALUES
 from .GUICard import GUICard
@@ -45,17 +46,25 @@ class GUIGame(arcade.Window):
 
         #  TODO: REMOVE / MOVE DOWN AGAIN
         self.card_list = arcade.SpriteList()
+
+
         DEFAULT_LINE_HEIGHT = 45
-        DEFAULT_FONT_SIZE = 15
+        DEFAULT_FONT_SIZE = 60 * CARD_SCALE
+        x_text_name_position = x_start_position - MAT_WIDTH / 2
+        text_anchor_x = "left"
         for i in range(len(self.player_list)):
-            
+            if i > NUMBER_OF_HANDS_PER_SIDE-1:
+                x_text_name_position =  x_start_position + 0.5 * MAT_WIDTH + MAT_X_OFFSET
+                text_anchor_x = "right"
+
             # prepare for drawing player names
             self.player_text_list.append(arcade.Text(
                 self.player_list[i].name,
-                x_start_position - MAT_WIDTH / 2,
+                x_text_name_position,
                 TOP_Y - row_index * MAT_Y_OFFSET + MAT_HEIGHT / 2,
                 arcade.color.BLACK,
-                DEFAULT_FONT_SIZE
+                DEFAULT_FONT_SIZE,
+                anchor_x = text_anchor_x
                 ))
 
             for j in range(2):
@@ -64,7 +73,7 @@ class GUIGame(arcade.Window):
                 self.pile_mat_list.append(pile)
                 
                 # TODO: REMOVE DEBUG
-                card = GUICard("Clubs", i+2, CARD_SCALE)
+                card = GUICard("Clubs", CARD_VALUES[i], CARD_SCALE)
                 card.position = x_start_position + j * MAT_X_OFFSET, TOP_Y - row_index * MAT_Y_OFFSET
                 self.card_list.append(card)
 
@@ -80,10 +89,11 @@ class GUIGame(arcade.Window):
         # prepare for drawing dealer name
         self.player_text_list.append(arcade.Text(
             "Dealer",
-            self.SCREEN_WIDTH/2 - MAT_X_OFFSET - MAT_WIDTH / 2,
+            self.SCREEN_WIDTH/2 - MAT_WIDTH / 2,
             TOP_Y + 2*VERTICAL_MARGIN_PERCENT * MAT_HEIGHT + MAT_HEIGHT * 1.5,
             arcade.color.BLACK,
-            DEFAULT_FONT_SIZE
+            DEFAULT_FONT_SIZE,
+            anchor_x = "center"
             ))
 
         # create dealer start hand placeholder
