@@ -13,15 +13,22 @@ class GUIGame(arcade.Window):
 
         arcade.set_background_color(arcade.color.AMAZON)
 
-        # Sprite list for cards
+        # Sprite list for cards (used for drawing all cards)
         self.card_list = None
 
-        # Sprite list for places where cards can be placed (mats)
+        # list holding a list of cards for every player
+        self.player_mats_list = None
+
+        # Sprite list for places where cards can be placed (mats) (used for drawing all mats)
         self.pile_mat_list = None
 
         self.SCREEN_WIDTH = width
         self.SCREEN_HEIGHT = height
         self.TITLE = title
+
+        self.MAT_WIDTH = None
+        self.MAT_HEIGHT = None
+        self.MAT_X_OFFSET = None
 
     def setup(self, player_list):
         """ Set up the game variables. Call to re-start the game. """
@@ -30,91 +37,95 @@ class GUIGame(arcade.Window):
         
         self.player_list = player_list
         self.player_text_list = []
+        # prepare a list for every player (for convenient access and adding of mats)
+        self.player_mats_list = [[] for _ in range(len(player_list)+1)]
 
         # ---  Create the mats the cards go on.
 
-        # Sprite list with all the mats tha cards lay on.
+        # Sprite list with all the mats that cards lay on
         self.pile_mat_list: arcade.SpriteList = arcade.SpriteList()
 
         # Create players start hands placeholder
-        row_index = 0
         NUMBER_OF_HANDS_PER_SIDE = math.ceil(len(self.player_list) / 2)
         print("PLAYER COUNT: {}".format(len(self.player_list)))
-        (CARD_SCALE, MAT_HEIGHT, MAT_WIDTH, MAT_X_OFFSET, MAT_Y_OFFSET, BOTTOM_Y, TOP_Y, START_X) = get_gui_constants(NUMBER_OF_HANDS_PER_SIDE, self.SCREEN_HEIGHT)
+        (CARD_SCALE, self.MAT_HEIGHT, self.MAT_WIDTH, self.MAT_X_OFFSET, MAT_Y_OFFSET, BOTTOM_Y, TOP_Y, START_X) = get_gui_constants(NUMBER_OF_HANDS_PER_SIDE, self.SCREEN_HEIGHT)
         print("NUMBER_OF_HANDS_PER_SIDE: {}".format(NUMBER_OF_HANDS_PER_SIDE))
-        x_start_position = START_X
+        
 
         #  TODO: REMOVE / MOVE DOWN AGAIN
         self.card_list = arcade.SpriteList()
 
-
-        DEFAULT_LINE_HEIGHT = 45
         DEFAULT_FONT_SIZE = 60 * CARD_SCALE
-        x_text_name_position = x_start_position - MAT_WIDTH / 2
+        x_start_position = START_X
+        x_text_name_position = x_start_position - self.MAT_WIDTH / 2
         text_anchor_x = "left"
+        row_index = 0
         for i in range(len(self.player_list)):
-            if i > NUMBER_OF_HANDS_PER_SIDE-1:
-                x_text_name_position =  x_start_position + 0.5 * MAT_WIDTH + MAT_X_OFFSET
-                text_anchor_x = "right"
+
+            # prepare for drawing dealer name
+            self.player_text_list.append(arcade.Text(
+                "Dealer",
+                self.SCREEN_WIDTH/2 - self.MAT_WIDTH / 2,
+                TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT * 1.5,
+                arcade.color.BLACK,
+                DEFAULT_FONT_SIZE,
+                anchor_x = "center"
+                ))
+
+            # prepare dealer start hand mats
+            for j in range(2):
+                pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+                pile.position = self.SCREEN_WIDTH/2 - self.MAT_X_OFFSET + j * self.MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT
+                self.pile_mat_list.append(pile)
+                # ! dealer is placed at position 0 for convenience !
+                self.player_mats_list[i].append(pile)
 
             # prepare for drawing player names
+            if i > NUMBER_OF_HANDS_PER_SIDE-1:
+                x_text_name_position =  x_start_position + 0.5 * self.MAT_WIDTH + self.MAT_X_OFFSET
+                text_anchor_x = "right"
             self.player_text_list.append(arcade.Text(
                 self.player_list[i].name,
                 x_text_name_position,
-                TOP_Y - row_index * MAT_Y_OFFSET + MAT_HEIGHT / 2,
+                TOP_Y - row_index * MAT_Y_OFFSET + self.MAT_HEIGHT / 2,
                 arcade.color.BLACK,
                 DEFAULT_FONT_SIZE,
                 anchor_x = text_anchor_x
                 ))
 
+            # prepare start hand mats (2) for every player
             for j in range(2):
-                pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-                pile.position = x_start_position + j * MAT_X_OFFSET, TOP_Y - row_index * MAT_Y_OFFSET
+                pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+                pile.position = x_start_position + j * self.MAT_X_OFFSET, TOP_Y - row_index * MAT_Y_OFFSET
                 self.pile_mat_list.append(pile)
+                self.player_mats_list[i+1].append(pile)
                 
                 # TODO: REMOVE DEBUG
                 card = GUICard("Clubs", CARD_VALUES[i], CARD_SCALE)
-                card.position = x_start_position + j * MAT_X_OFFSET, TOP_Y - row_index * MAT_Y_OFFSET
+                card.position = x_start_position + j * self.MAT_X_OFFSET, TOP_Y - row_index * MAT_Y_OFFSET
                 self.card_list.append(card)
 
             print("INDEX I: {}".format(i))
             print("X POS: {}, Y POS: {}".format(x_start_position, TOP_Y - row_index * MAT_Y_OFFSET))
+            
+            # handle different positioning depending on index of player
             if i >= NUMBER_OF_HANDS_PER_SIDE-1:
-                x_start_position = self.SCREEN_WIDTH - START_X - MAT_X_OFFSET
+                x_start_position = self.SCREEN_WIDTH - START_X - self.MAT_X_OFFSET
                 if i >= NUMBER_OF_HANDS_PER_SIDE:
                     row_index -= 1
             else:
                 row_index += 1
 
-        # prepare for drawing dealer name
-        self.player_text_list.append(arcade.Text(
-            "Dealer",
-            self.SCREEN_WIDTH/2 - MAT_WIDTH / 2,
-            TOP_Y + 2*VERTICAL_MARGIN_PERCENT * MAT_HEIGHT + MAT_HEIGHT * 1.5,
-            arcade.color.BLACK,
-            DEFAULT_FONT_SIZE,
-            anchor_x = "center"
-            ))
-
-        # create dealer start hand placeholder
-        for j in range(2):
-            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            pile.position = self.SCREEN_WIDTH/2 - MAT_X_OFFSET + j * MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * MAT_HEIGHT + MAT_HEIGHT
-            self.pile_mat_list.append(pile)
-
-        # Sprite list with all the cards
-        # self.card_list = arcade.SpriteList()
-
         # Create every card
-        for card_suit in CARD_SUITS:
-            counter = 0
-            for card_value in CARD_VALUES:
-                card = GUICard(card_suit, card_value, CARD_SCALE)
-                card.position = START_X + counter * MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * MAT_HEIGHT + MAT_HEIGHT
-                self.card_list.append(card)
-                # counter += 1
+        # for card_suit in CARD_SUITS:
+        #     counter = 0
+        #     for card_value in CARD_VALUES:
+        #         card = GUICard(card_suit, card_value, CARD_SCALE)
+        #         card.position = START_X + counter * MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * MAT_HEIGHT + MAT_HEIGHT
+        #         self.card_list.append(card)
+        #         # counter += 1
         card = GUICard("Back_green", "5", CARD_SCALE)
-        card.position = START_X, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * MAT_HEIGHT + MAT_HEIGHT
+        card.position = START_X, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT
         self.card_list.append(card)
 
 
@@ -152,7 +163,14 @@ class GUIGame(arcade.Window):
         For a full list of keys, see:
         https://api.arcade.academy/en/latest/arcade.key.html
         """
-        pass
+        if key == arcade.key.SPACE:
+            # TODO: make depending on currently playing player / valid check
+            pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+            pile.position = self.player_mats_list[0][-1].position[0] + self.MAT_X_OFFSET, self.player_mats_list[0][-1].position[1]
+            self.pile_mat_list.append(pile)
+            self.player_mats_list[0].append(pile)
+            print("APPENDING NEW PILE")
+            
 
     def on_key_release(self, key, key_modifiers):
         """
