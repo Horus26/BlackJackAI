@@ -7,6 +7,8 @@ class Player(ABC) :
         self.current_bet = 0
         self.cards = []
         self.ace_counts = 0
+        # resplitting not allowed
+        self.split_this_round = False
 
     def add_card(self, card):
         if(card.value == 1): self.ace_counts += 1
@@ -16,6 +18,7 @@ class Player(ABC) :
         self.cards.clear()
         self.ace_counts = 0
         self.current_bet = 0
+        self.split_this_round = False
 
     
     def get_bet(self):
@@ -69,17 +72,32 @@ class Player(ABC) :
         self.money += (2 * self.current_bet)
         self.clear_cards()
 
-    def init_split(self):
+    def check_hit_valid(self):
+        if self.split_this_round and self.cards[0].value == 1:
+            return False
+        return True
+
+    def check_split_valid(self):
         # check if all requirements are fullfilled for split
-        if self.money < self.current_bet or len(self.cards) != 2 or self.cards[0].image_value != self.cards[1].image_value:
-            return (False, None)
-        else:
-            self.money -= self.current_bet
-            card = self.cards[1]
-            self.cards.remove(card)
-            return (True, card)
+        if self.split_this_round or self.money < self.current_bet or len(self.cards) != 2 or self.cards[0].image_value != self.cards[1].image_value:
+            return False
+        return True
+        # else:
+        #     self.money -= self.current_bet
+        #     card = self.cards[1]
+        #     self.cards.remove(card)
+        #     return (True, card)
     
-    def init_double(self):
+    def turn_split(self):
+        self.split_this_round = True
+        self.money -= self.current_bet
+        card = self.cards[1]
+        self.cards.remove(card)
+        return card
+
+    def check_double_valid(self):
+        # double down currently allowed after splitting
+ 
         # check for cards dealt total of 9, 10 or 11
         double_total_allowed = False
         temp_hand_value = sum([card.value for card in self.cards])
@@ -96,11 +114,12 @@ class Player(ABC) :
         # only allow doubling down if there is enough money and cards dealt total is 9, 10 or 11 
         if self.money < self.current_bet or not double_total_allowed:
             return False
-        else:
-            self.money -= self.current_bet
-            self.current_bet *= 2
-        
+
         return True
+    
+    def turn_double(self):
+        self.money -= self.current_bet
+        self.current_bet *= 2
 
 
 

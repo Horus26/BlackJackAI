@@ -30,6 +30,9 @@ class GUIGame(arcade.Window):
         self.MAT_HEIGHT = None
         self.MAT_X_OFFSET = None
 
+        # reference to gamestate manager
+        self.gamestate_manager = None
+
     def setup(self, player_list):
         """ Set up the game variables. Call to re-start the game. """
         if not player_list:
@@ -154,6 +157,8 @@ class GUIGame(arcade.Window):
         Normally, you'll call update() on the sprite lists that
         need it.
         """
+        # TODO: find player whose turn it is
+
         pass
 
     def on_key_press(self, key, key_modifiers):

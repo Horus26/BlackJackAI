@@ -23,7 +23,7 @@ class GamestateManagerTest(unittest.TestCase):
         
     
     def test_init_round(self):
-        # check that bets are taken from every player and cards are dealt
+        # check that cards are dealt
         
         # Arrange
         player_money_before = []
@@ -33,13 +33,12 @@ class GamestateManagerTest(unittest.TestCase):
             player_money_before.append(player.money)
 
         # Act
-        self.gamestate_manager.init_round()
+        self.gamestate_manager.init_round_cards()
         for player in self.gamestate_manager.player_list:
             player_money_after.append(player.money)
 
         # Assert
         for i, player in enumerate(self.gamestate_manager.player_list):
-            self.assertEqual(player.current_bet, player_money_before[i] - player_money_after[i])
             self.assertEqual(len(player.cards), 2)
 
         self.assertEqual(len(self.gamestate_manager.dealer.cards), 2)

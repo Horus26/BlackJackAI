@@ -7,6 +7,8 @@ class SplitTempPlayer(Player) :
         self.parent_player = player
         self.current_bet = player.current_bet
         self.cards.append(card)
+        # ensure that no resplitting can happen
+        self.split_this_round = True
 
     def make_turn(self):
         # print("{} Hit".format(self.name))
