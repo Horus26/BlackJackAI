@@ -28,7 +28,7 @@ def main():
     valid_game = gamestate_manager.init_game(player_list)
 
     # connect gui with gamestate manager
-    if gui is not None: gui.gamestate_manager = gamestate_manager
+    # if gui is not None: gui.gamestate_manager = gamestate_manager
 
     play_game(gamestate_manager, gui)
     # if(valid_game):
@@ -47,9 +47,19 @@ def play_game(gamestate_manager : GamestateManager, gui : GUIGame):
     # handle initial bets
     for player in gamestate_manager.current_playing_players:
         valid_bet = False
+
+        # cache whether player is a gui player
+        gui_player = player.gui_player
+
         while(not valid_bet):
-            bet = player.get_bet()
-            if (isinstance(bet, int) or isinstance(bet, float)) and bet >= gamestate_manager.minimum_bet:
+            bet = None
+            if gui_player:
+                # TODO: GET BET FROM GUI FOR PLAYER
+                pass
+            else:
+                bet = player.get_bet()
+
+            if (isinstance(bet, int) or isinstance(bet, float)) and bet >= gamestate_manager.minimum_bet and bet <= player.money:
                 player.current_bet = bet
                 player.money -= bet
                 valid_bet = True
@@ -75,7 +85,7 @@ def play_game(gamestate_manager : GamestateManager, gui : GUIGame):
     dealer_blackjack = gamestate_manager.evaluate_dealt_cards()
     if dealer_blackjack:
         # TODO: BREAK AND START NEXT ROUND
-        pass
+        return
 
     # Players turn
     for player in list(gamestate_manager.current_playing_players):
@@ -112,16 +122,7 @@ def handle_player_turn(gamestate_manager : GamestateManager, player, gui : GUIGa
 
         # expected return values: true if turn is finished, false if not finished
         # finished turn when action was stand, double or player bust (hit > 21) or split with two aces
-        (turn_finished, hand_value, split_player) = gamestate_manager.player_turn(player, turn_action)
-        if hand_value > 21:
-            # important that player can already lose here as it can affect other players
-            print("Player {} bust".format(player.name))
-            player.lose_round()
-            if player in gamestate_manager.current_playing_players:
-                gamestate_manager.current_playing_players.remove(player)
-            else:
-                gamestate_manager.split_player_round_list.remove(player)
-            turn_finished = True
+        turn_finished, split_player = gamestate_manager.player_turn(player, turn_action)
 
         if split_player is not None:
             handle_player_turn(gamestate_manager, split_player, gui)

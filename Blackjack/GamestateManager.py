@@ -184,32 +184,44 @@ class GamestateManager :
 
         return valid_actions_list
     
-    def player_turn(self, player, turn_action, split_allowed = True):        
-        # get new hand value
-        hand_value = player.get_hand_value()
-        
+    def player_turn(self, player, turn_action):               
         if turn_action == PLAYER_ACTIONS["Stand"]:
-            return (True, hand_value, None)
+            return (True, None)
 
-        # check if player has no options left
-        if hand_value >= 21: return (True, hand_value, None)
+        turn_finished, split_player = self.execute_player_turn_action(player, turn_action)
+        hand_value = player.get_hand_value()
+        if hand_value > 21:
+            # important that player can already lose here as it can affect other players
+            print("Player {} bust".format(player.name))
+            player.lose_round()
+            if player in self.current_playing_players:
+                self.current_playing_players.remove(player)
+            else:
+                self.split_player_round_list.remove(player)
+            turn_finished = True
+        elif hand_value == 21:
+            turn_finished = True
+        
+        return turn_finished, split_player
 
+    
+    def execute_player_turn_action(self, player, turn_action):
         # evaluate turn
         if turn_action == PLAYER_ACTIONS["Hit"]: 
             self.hit(player)
-            return(False, player.get_hand_value(), None)
+            return(False, None)
 
         elif turn_action == PLAYER_ACTIONS["Double"]: 
             # after double down player gets one card and must stand after
             self.double(player)
-            return (True, player.get_hand_value(), None)
+            return (True, None)
 
         elif turn_action == PLAYER_ACTIONS["Split"]: 
             turn_finished, split_player = self.split(player)
-            return (turn_finished, player.get_hand_value(), split_player)
+            return (turn_finished, split_player)
         
         # else player action stand which results in no action (else case exists as emergency exit in case of failure)
-        else: return (True, player.get_hand_value(), None)
+        else: return (True, None)
 
     # def player_turn(self, player, turn_action, split_allowed = True):
     #         # get new hand value

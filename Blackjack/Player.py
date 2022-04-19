@@ -9,6 +9,7 @@ class Player(ABC) :
         self.ace_counts = 0
         # resplitting not allowed
         self.split_this_round = False
+        self.gui_player = False
 
     def add_card(self, card):
         if(card.value == 1): self.ace_counts += 1
@@ -23,7 +24,7 @@ class Player(ABC) :
     
     def get_bet(self):
         bet = self.determine_bet()
-        while(bet is not None and bet > self.money): 
+        while(bet is None): 
             bet = self.determine_bet()
         
         return bet
