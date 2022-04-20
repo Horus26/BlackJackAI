@@ -70,13 +70,14 @@ def play_game(gamestate_manager : GamestateManager, gui : GUIGame):
     gamestate_manager.init_round_cards()
     
     # # TODO: DEBUG ENTFERNEN
-    # # create two cards with value 5 to test all player actions
+    # create two cards with value 5 to test all player actions
     # from Blackjack.Cards import Card
     # from Blackjack.Constants import COLOR_SPADE
-    # card1 = Card(COLOR_SPADE + str(5), 5, COLOR_SPADE, 5)
-    # card2 = Card(COLOR_SPADE + str(5), 5, COLOR_SPADE, 5)
+    # card1 = Card(COLOR_SPADE + "A", 1, COLOR_SPADE, "A")
+    # card2 = Card(COLOR_SPADE + "A", 1, COLOR_SPADE, "A")
     # gamestate_manager.player_list[-1].cards.clear()
-    # gamestate_manager.player_list[-1].cards = [card1, card2]
+    # gamestate_manager.player_list[-1].add_card(card1)
+    # gamestate_manager.player_list[-1].add_card(card2)
     
     # TODO: deal out cards at gui level aswell
 

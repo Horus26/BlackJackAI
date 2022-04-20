@@ -12,12 +12,11 @@ class SplitTempPlayer(Player) :
 
     def make_turn(self):
         # print("{} Hit".format(self.name))
-        return PLAYER_ACTIONS["Hit"]
+        # TODO: IMPLEMENT CORRECT TURN ACTION DETERMINATION
+        return PLAYER_ACTIONS["Stand"]
 
     def determine_bet(self):
-        bet = 1
-        print("SplitTempPlayer {} determining bet: {}".format(self.name, bet))
-        return bet
+        pass
     
     def tie_round(self):
         self.parent_player.money += self.current_bet

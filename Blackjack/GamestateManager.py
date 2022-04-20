@@ -279,31 +279,28 @@ class GamestateManager :
         player.add_card(self.get_random_card())
         split_temp_player.add_card(self.get_random_card())
 
-        print("Player {} splitting".format(player.name))
-        print("Splitted hand: ")
-        split_temp_player.print_hand()
-        print("Original new hand: ")
-        player.print_hand()
-
         # add new entry to split_player_round_dict for referencing split player in evaluation
         self.split_player_round_list.append(split_temp_player)
 
         # check if two aces were split -> then player must stand (no hit/split/double down allowed)
         # it does not matter whether the new hand is a blackjack
         if card.value == 1:
+            split_temp_player.ace_counts += 1
             print("Aces were split --> player must stand")
             
+            print("Player {} splitting".format(player.name))
+            print("Splitted hand: ")
+            split_temp_player.print_hand()
+            print("Original new hand: ")
+            player.print_hand()
             # turn finished
             return True, split_temp_player
-        # else hit and double down allowed
-        #  TODO: Remove if working
-        # else:
-        #     print("Split players turn:")
-        #     hand_value = self.player_turn(split_temp_player, split_allowed=False)
-        #     # handle if split hand goes bust
-        #     if hand_value > 21:
-        #         split_temp_player.lose_round()
-        #         self.split_player_round_list.remove(split_temp_player)
+
+        print("Player {} splitting".format(player.name))
+        print("Splitted hand: ")
+        split_temp_player.print_hand()
+        print("Original new hand: ")
+        player.print_hand()
         
         # player turn with original hand (that called split) not finished with turn
         return False, split_temp_player
