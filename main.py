@@ -1,7 +1,9 @@
+from Blackjack.GUIPlayer import GUIPlayer
 from Blackjack.GamestateManager import GamestateManager
 from Blackjack.CommandLinePlayer import CommandLinePlayer
 from Blackjack.GreedyAIPlayer import GreedyAIPlayer
-from Blackjack.GUIGame import GUIGame
+from Blackjack.GUIGameView import GUIGameView
+import arcade
 
 
 def main():
@@ -15,49 +17,43 @@ def main():
     for ai_player_name in ai_player_name_list:
         player_list.append(GreedyAIPlayer(ai_player_name, start_money))
     
-    human_player = CommandLinePlayer("Human player", start_money)
+    human_player = GUIPlayer("Human player", start_money)
+    # human_player = CommandLinePlayer("Human player", start_money)
     player_list.append(human_player)
 
     # TODO: implement better solution for player init
     if not player_list:
         exit(34)
 
-    # gui = init_gui(player_list)
+    gui = init_gui(player_list)
 
-    # start game
     valid_game = gamestate_manager.init_game(player_list)
+    gui.gamestate_manager = gamestate_manager
 
-    # connect gui with gamestate manager
-    # if gui is not None: gui.gamestate_manager = gamestate_manager
+    # start game with gui
+    arcade.run()
 
-    play_game(gamestate_manager, gui)
-    # if(valid_game):
-    #     # Check if human players want to play another round
-    #     while(input("Play round? --> 'True': ") in ["True", "true"]):
-    #         gamestate_manager.start_game()
+    # play non gui game
+    # play_non_gui_game(gamestate_manager)
+
 
 
 def init_gui(player_list):
-    game_gui = GUIGame(800, 600, "Blackjack")
-    game_gui.setup(player_list)
-    game_gui.start_gui()
-    return game_gui
+    window = arcade.Window(800, 600, "Blackjack")
+    gui_game_view = GUIGameView()
+    window.show_view(gui_game_view)
+    gui_game_view.setup(player_list)
+    return gui_game_view
 
-def play_game(gamestate_manager : GamestateManager, gui : GUIGame):
+
+def play_non_gui_game(gamestate_manager : GamestateManager):
     # handle initial bets
     for player in gamestate_manager.current_playing_players:
         valid_bet = False
 
-        # cache whether player is a gui player
-        gui_player = player.gui_player
-
         while(not valid_bet):
-            bet = None
-            if gui_player:
-                # TODO: GET BET FROM GUI FOR PLAYER
-                pass
-            else:
-                bet = player.get_bet()
+
+            bet = player.get_bet()
 
             if (isinstance(bet, int) or isinstance(bet, float)) and bet >= gamestate_manager.minimum_bet and bet <= player.money:
                 player.current_bet = bet
@@ -69,19 +65,6 @@ def play_game(gamestate_manager : GamestateManager, gui : GUIGame):
     # deal out initial cards
     gamestate_manager.init_round_cards()
     
-    # # TODO: DEBUG ENTFERNEN
-    # create two cards with value 5 to test all player actions
-    # from Blackjack.Cards import Card
-    # from Blackjack.Constants import COLOR_SPADE
-    # card1 = Card(COLOR_SPADE + "A", 1, COLOR_SPADE, "A")
-    # card2 = Card(COLOR_SPADE + "A", 1, COLOR_SPADE, "A")
-    # gamestate_manager.player_list[-1].cards.clear()
-    # gamestate_manager.player_list[-1].add_card(card1)
-    # gamestate_manager.player_list[-1].add_card(card2)
-    
-    # TODO: deal out cards at gui level aswell
-
-
     # end round if dealer blackjack (win/lose per player already handled in evaluate dealt cards)
     dealer_blackjack = gamestate_manager.evaluate_dealt_cards()
     if dealer_blackjack:
@@ -90,7 +73,7 @@ def play_game(gamestate_manager : GamestateManager, gui : GUIGame):
 
     # Players turn
     for player in list(gamestate_manager.current_playing_players):
-        handle_player_turn(gamestate_manager, player, gui)
+        handle_player_turn(gamestate_manager, player)
 
     # dealer turn
     gamestate_manager.dealer_turn()
@@ -98,7 +81,7 @@ def play_game(gamestate_manager : GamestateManager, gui : GUIGame):
     # evaluate round
     gamestate_manager.evaluate_round()
 
-def handle_player_turn(gamestate_manager : GamestateManager, player, gui : GUIGame):
+def handle_player_turn(gamestate_manager : GamestateManager, player):
     hand_value = player.get_hand_value()
     
     turn_finished = False
@@ -108,11 +91,8 @@ def handle_player_turn(gamestate_manager : GamestateManager, player, gui : GUIGa
 
         turn_action = None
         valid_player_turn_actions = gamestate_manager.get_valid_player_actions(player)
-        if gui is None:
-            turn_action = player.make_turn()
-        else:
-            # TODO: GET ACTION FROM GUI
-            pass
+        turn_action = player.make_turn()
+
 
         # check if chosen action is valid
         if turn_action not in valid_player_turn_actions:
@@ -126,7 +106,7 @@ def handle_player_turn(gamestate_manager : GamestateManager, player, gui : GUIGa
         turn_finished, split_player = gamestate_manager.player_turn(player, turn_action)
 
         if split_player is not None:
-            handle_player_turn(gamestate_manager, split_player, gui)
+            handle_player_turn(gamestate_manager, split_player)
 
 
 if __name__ == "__main__":

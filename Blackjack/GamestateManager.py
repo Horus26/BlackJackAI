@@ -1,4 +1,3 @@
-from re import A
 from .CommandLinePlayer import CommandLinePlayer
 from .SplitTempPlayer import SplitTempPlayer
 from .Dealer import Dealer
@@ -45,9 +44,9 @@ class GamestateManager :
             print(card)
         print("CARD COUNT: " + str(len(self.playable_carddeck)))
 
-    def start_game(self):
-        self.play_round()
-        self.clean_round()
+    # def start_game(self):
+    #     self.play_round()
+    #     self.clean_round()
 
     def init_round_cards(self):
         
@@ -91,8 +90,6 @@ class GamestateManager :
 
         print()
 
-        
-    
     def deal_card_round(self):
         for player in self.current_playing_players:
             # draw random card
@@ -336,9 +333,6 @@ class GamestateManager :
             print("No players remaining that did not go bust")
 
         print()
-
-
-        
 
     def clean_round(self):
         self.split_player_round_list.clear()
