@@ -1,11 +1,12 @@
 from .Constants import COLORS
 
 class Card :
-    def __init__(self, _name, _value, _color, _image_value):
+    def __init__(self, _name, _value, _color, _image_value, _color_string):
         self.name = _name
         self.value = _value
         self.color = _color
         self.image_value = _image_value
+        self.color_string = _color_string
 
     def __repr__(self):
         return "Card: {}, Value: {}, Color: {}".format(self.name, self.value, self.color)
@@ -14,15 +15,15 @@ class Card :
 class Carddeck :
     def __init__(self):
         self.deck = []
-        for color in COLORS:
+        for color, color_string in COLORS:
             # add number cards
             for value in range(2, 11):
-                self.deck.append(Card(color + str(value), value, color, value))
+                self.deck.append(Card(color + str(value), value, color, value, color_string))
             # add image cards
             for i in ["J", "Q", "K"]:
-                self.deck.append(Card(color + i, 10, color, i))
+                self.deck.append(Card(color + i, 10, color, i, color_string))
             # add ace as 1 and handle in player
-            self.deck.append(Card(color + "A", 1, color, "A"))
+            self.deck.append(Card(color + "A", 1, color, "A", color_string))
 
     def printDeck(self):
         for card in self.deck:

@@ -47,6 +47,7 @@ class GUIGameView(arcade.View):
         self.v_box = None
         self.ui_input_box = None
         self.NUMBER_OF_HANDS_PER_SIDE = 0
+        self.CARD_SCALE = 1
 
     def setup(self, player_list):
         """ Set up the game variables. Call to re-start the game. """
@@ -72,14 +73,14 @@ class GUIGameView(arcade.View):
         # Create players start hands placeholder
         self.NUMBER_OF_HANDS_PER_SIDE = math.ceil(len(self.player_list) / 2)
         print("PLAYER COUNT: {}".format(len(self.player_list)))
-        (CARD_SCALE, self.MAT_HEIGHT, self.MAT_WIDTH, self.MAT_X_OFFSET, MAT_Y_OFFSET, BOTTOM_Y, TOP_Y, START_X) = get_gui_constants(self.NUMBER_OF_HANDS_PER_SIDE, self.SCREEN_HEIGHT)
+        (self.CARD_SCALE, self.MAT_HEIGHT, self.MAT_WIDTH, self.MAT_X_OFFSET, MAT_Y_OFFSET, BOTTOM_Y, TOP_Y, START_X) = get_gui_constants(self.NUMBER_OF_HANDS_PER_SIDE, self.SCREEN_HEIGHT)
         print("NUMBER_OF_HANDS_PER_SIDE: {}".format(self.NUMBER_OF_HANDS_PER_SIDE))
         
 
         #  TODO: REMOVE / MOVE DOWN AGAIN
         self.card_list = arcade.SpriteList()
 
-        self.DEFAULT_FONT_SIZE = 60 * CARD_SCALE
+        self.DEFAULT_FONT_SIZE = 60 * self.CARD_SCALE
         x_start_position = START_X
         x_text_name_position = x_start_position - self.MAT_WIDTH / 2
         text_anchor_x = "left"
@@ -94,15 +95,15 @@ class GUIGameView(arcade.View):
             anchor_x = "center"
             ))
 
-        for i in range(len(self.player_list)):
+        # prepare dealer start hand mats
+        for j in range(2):
+            pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+            pile.position = self.SCREEN_WIDTH/2 - self.MAT_X_OFFSET + j * self.MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT
+            self.pile_mat_list.append(pile)
+            # ! dealer is placed at position 0 for convenience !
+            self.player_mats_list[0].append(pile)
 
-            # prepare dealer start hand mats
-            for j in range(2):
-                pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-                pile.position = self.SCREEN_WIDTH/2 - self.MAT_X_OFFSET + j * self.MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT
-                self.pile_mat_list.append(pile)
-                # ! dealer is placed at position 0 for convenience !
-                self.player_mats_list[i].append(pile)
+        for i in range(len(self.player_list)):
 
             # prepare for drawing player names
             if i > self.NUMBER_OF_HANDS_PER_SIDE-1:
@@ -123,11 +124,7 @@ class GUIGameView(arcade.View):
                 pile.position = x_start_position + j * self.MAT_X_OFFSET, TOP_Y - row_index * MAT_Y_OFFSET
                 self.pile_mat_list.append(pile)
                 self.player_mats_list[i+1].append(pile)
-                
-                # TODO: REMOVE DEBUG
-                card = GUICard("Clubs", CARD_VALUES[i], CARD_SCALE)
-                card.position = x_start_position + j * self.MAT_X_OFFSET, TOP_Y - row_index * MAT_Y_OFFSET
-                self.card_list.append(card)
+            
 
             print("INDEX I: {}".format(i))
             print("X POS: {}, Y POS: {}".format(x_start_position, TOP_Y - row_index * MAT_Y_OFFSET))
@@ -148,7 +145,7 @@ class GUIGameView(arcade.View):
         #         card.position = START_X + counter * MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * MAT_HEIGHT + MAT_HEIGHT
         #         self.card_list.append(card)
         #         # counter += 1
-        card = GUICard("Back_green", "5", CARD_SCALE)
+        card = GUICard("Back_green", "5", self.CARD_SCALE)
         card.position = START_X, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT
         self.card_list.append(card)
 
@@ -286,10 +283,45 @@ class GUIGameView(arcade.View):
 
     def deal_cards_phase(self):
         self.gamestate_manager.init_round_cards()
-        # TODO: GUI DEAL CARDS
 
+        # start from index 1 to handle dealer seperately
+        for i in range(1, len(self.player_list)+1):
+            cards =  self.player_list[i-1].cards
+            # create first card at correct position
+            GUI_card = GUICard(cards[0].color_string, cards[0].image_value, self.CARD_SCALE)
+            GUI_card.position = self.player_mats_list[i][0].position
+            self.card_list.append(GUI_card)
+            # create second card at correct position
+            GUI_card = GUICard(cards[1].color_string, cards[1].image_value, self.CARD_SCALE)
+            GUI_card.position = self.player_mats_list[i][1].position
+            self.card_list.append(GUI_card)
+        
+        # DEBUG TO TEST DEALER BLACKJACK
+        # from Blackjack.Cards import Card
+        # self.gamestate_manager.dealer.cards = [Card(u'\u2660' + "J", 10, u'\u2660', "J", "Spades"), Card(u'\u2660' + "A", 1, u'\u2660', "A", "Spades")]
+        # self.gamestate_manager.dealer.ace_counts = 1
+        # self.gamestate_manager.dealer.print_hand(second_card_visible=True)
+
+        # deal dealer cards
+        first_card =  self.gamestate_manager.dealer.cards[0]
+        # create first card at correct position
+        GUI_card = GUICard(first_card.color_string, first_card.image_value, self.CARD_SCALE)
+        GUI_card.position = self.player_mats_list[0][0].position
+        self.card_list.append(GUI_card)
+        # create face down second card at correct position
+        GUI_card = GUICard("Back_green", "5", self.CARD_SCALE)
+        GUI_card.position = self.player_mats_list[0][1].position
+        self.card_list.append(GUI_card)
+
+        
         dealer_blackjack = self.gamestate_manager.evaluate_dealt_cards()
-        # TODO: GUI HANDLE DEALER BLACKJACK
+        # TODO: GUI HANDLE DEALER BLACKJACK INSTEAD OF EXITING GAME
+        
+        if dealer_blackjack:
+            print("DEALER BLACKJACK")
+            exit(10)
+
+        self.game_phase += 1
 
     def player_turn_phase(self):
         # TODO: HANDLE PLAYER TURN AND GUI
@@ -311,12 +343,12 @@ class GUIGameView(arcade.View):
         https://api.arcade.academy/en/latest/arcade.key.html
         """
         if key == arcade.key.SPACE:
-            # TODO: make depending on currently playing player / valid check
-            pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            pile.position = self.player_mats_list[0][-1].position[0] + self.MAT_X_OFFSET, self.player_mats_list[0][-1].position[1]
-            self.pile_mat_list.append(pile)
-            self.player_mats_list[0].append(pile)
-            print("APPENDING NEW PILE")
+            # # TODO: make depending on currently playing player / valid check
+            # pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+            # pile.position = self.player_mats_list[0][-1].position[0] + self.MAT_X_OFFSET, self.player_mats_list[0][-1].position[1]
+            # self.pile_mat_list.append(pile)
+            # self.player_mats_list[0].append(pile)
+            # print("APPENDING NEW PILE")
 
             self.game_phase += 1
 
