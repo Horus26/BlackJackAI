@@ -2,6 +2,7 @@ import math
 import arcade
 import arcade.gui
 from arcade.gui import UIManager, UIBoxLayout, UIFlatButton
+from Blackjack.Constants import PLAYER_ACTIONS
 from Blackjack.GamestateManager import GamestateManager
 from .GUIConstants import get_gui_constants, VERTICAL_MARGIN_PERCENT, CARD_SUITS, CARD_VALUES
 from .GUICard import GUICard
@@ -48,6 +49,9 @@ class GUIGameView(arcade.View):
         self.ui_input_box = None
         self.NUMBER_OF_HANDS_PER_SIDE = 0
         self.CARD_SCALE = 1
+        self.turn_option_box = None
+        self.split_player = None
+        self.gui_turn_action = None
 
     def setup(self, player_list):
         """ Set up the game variables. Call to re-start the game. """
@@ -103,11 +107,12 @@ class GUIGameView(arcade.View):
             # ! dealer is placed at position 0 for convenience !
             self.player_mats_list[0].append(pile)
 
+        x_offset = self.MAT_X_OFFSET
         for i in range(len(self.player_list)):
 
             # prepare for drawing player names
             if i > self.NUMBER_OF_HANDS_PER_SIDE-1:
-                x_text_name_position =  x_start_position + 0.5 * self.MAT_WIDTH + self.MAT_X_OFFSET
+                x_text_name_position =  x_start_position + 0.5 * self.MAT_WIDTH + x_offset
                 text_anchor_x = "right"
             self.player_text_list.append(arcade.Text(
                 self.player_list[i].name,
@@ -121,7 +126,7 @@ class GUIGameView(arcade.View):
             # prepare start hand mats (2) for every player
             for j in range(2):
                 pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-                pile.position = x_start_position + j * self.MAT_X_OFFSET, TOP_Y - row_index * MAT_Y_OFFSET
+                pile.position = x_start_position + j * x_offset, TOP_Y - row_index * MAT_Y_OFFSET
                 self.pile_mat_list.append(pile)
                 self.player_mats_list[i+1].append(pile)
             
@@ -131,7 +136,8 @@ class GUIGameView(arcade.View):
             
             # handle different positioning depending on index of player
             if i >= self.NUMBER_OF_HANDS_PER_SIDE-1:
-                x_start_position = self.SCREEN_WIDTH - START_X - self.MAT_X_OFFSET
+                x_start_position = self.SCREEN_WIDTH - START_X
+                x_offset = -self.MAT_X_OFFSET
                 if i >= self.NUMBER_OF_HANDS_PER_SIDE:
                     row_index -= 1
             else:
@@ -150,6 +156,7 @@ class GUIGameView(arcade.View):
         self.card_list.append(card)
 
 
+        # prepare ui box for player bet input
         # Create a text label
         label = arcade.gui.UILabel(
             text="Enter bet",
@@ -161,9 +168,10 @@ class GUIGameView(arcade.View):
         submit_button = UIFlatButton(
             color=arcade.color.DARK_BLUE_GRAY,
             text='Submit')
-        # --- Method 2 for handling click events,
-        # assign self.on_click_start as callback
-        submit_button.on_click = self.on_click_submit
+
+        @submit_button.event("on_click")    
+        def on_click_submit(self, event):
+            self.send_input = True
         
         self.ui_input_box = arcade.gui.UIInputText(
              width=self.DEFAULT_FONT_SIZE * 10,
@@ -175,6 +183,65 @@ class GUIGameView(arcade.View):
         self.v_box = UIBoxLayout(
             children=[label, self.ui_input_box, submit_button]
         )
+
+
+        # prepare ui box for player turn options
+        self.turn_option_box = arcade.gui.UIBoxLayout()
+
+        label = arcade.gui.UILabel(
+            text="Choose turn action",
+            text_color=arcade.color.DARK_RED,
+            font_size=self.DEFAULT_FONT_SIZE*2,
+            font_name="Kenney Future")
+
+        # Create four buttons as there are four turn options for a player
+        options = ["Hit", "Stand", "Double", "Split"]
+        
+        option_button = UIFlatButton(
+            color=arcade.color.DARK_BLUE_GRAY,
+            text=options[0])
+        # Handle Clicks
+        @option_button.event("on_click")
+        def on_click_flatbutton(event):
+            self.gui_turn_action = PLAYER_ACTIONS[options[0]]
+            self.send_input = True
+            print("GUI TURN ACTION: {}, {}".format(options[0], self.gui_turn_action))
+        self.turn_option_box.add(option_button)
+        
+        option_button_1 = UIFlatButton(
+            color=arcade.color.DARK_BLUE_GRAY,
+            text=options[1])
+        # Handle Clicks
+        @option_button_1.event("on_click")
+        def on_click_flatbutton(event):
+            self.gui_turn_action = PLAYER_ACTIONS[options[1]]
+            self.send_input = True
+            print("GUI TURN ACTION: {}, {}".format(options[1], self.gui_turn_action))
+        self.turn_option_box.add(option_button_1)
+        
+        option_button_2 = UIFlatButton(
+            color=arcade.color.DARK_BLUE_GRAY,
+            text=options[2])
+        # Handle Clicks
+        @option_button_2.event("on_click")
+        def on_click_flatbutton(event):
+            self.gui_turn_action = PLAYER_ACTIONS[options[2]]
+            self.send_input = True
+            print("GUI TURN ACTION: {}, {}".format(options[2], self.gui_turn_action))
+        self.turn_option_box.add(option_button_2)
+        
+        option_button_3 = UIFlatButton(
+            color=arcade.color.DARK_BLUE_GRAY,
+            text=options[3])
+        # Handle Clicks
+        @option_button_3.event("on_click")
+        def on_click_flatbutton(event):
+            self.gui_turn_action = PLAYER_ACTIONS[options[3]]
+            self.send_input = True
+            print("GUI TURN ACTION: {}, {}".format(options[3], self.gui_turn_action))
+        self.turn_option_box.add(option_button_3)
+
+        self.turn_option_box.add(label)
 
        
 
@@ -256,7 +323,7 @@ class GUIGameView(arcade.View):
                 self.send_input = False
         else:
             if self.input_active:
-                self.remove_bet_input_field_widget()
+                self.remove_widgets()
             else:
                 bet = current_player.get_bet()
                 if self.check_bet_input_valid(bet, current_player):
@@ -269,7 +336,7 @@ class GUIGameView(arcade.View):
 
         if self.active_player_index == len(self.player_list):
             self.active_player_index = None
-            self.remove_bet_input_field_widget()
+            self.remove_widgets()
 
     def check_bet_input_valid(self, bet, player):
         valid_bet = False
@@ -324,8 +391,125 @@ class GUIGameView(arcade.View):
         self.game_phase += 1
 
     def player_turn_phase(self):
-        # TODO: HANDLE PLAYER TURN AND GUI
-        pass
+        if self.active_player_index is None:
+            self.active_player_index = 0
+            self.game_phase += 1
+            print("TURN ACTION PHASE FINISHED")
+            return
+
+        current_player = None
+        # if a player splits --> creates split player --> then always handles split player first
+        if self.split_player is None:
+            current_player = self.player_list[self.active_player_index]
+            if current_player not in self.gamestate_manager.current_playing_players:
+                self.active_player_index += 1
+                return
+        
+        else:
+            current_player = self.split_player
+            if current_player not in self.gamestate_manager.current_playing_players:
+                self.split_player = None
+                return
+        
+
+        valid_player_turn_actions = self.gamestate_manager.get_valid_player_actions(current_player)
+
+        if current_player.gui_player:
+            if self.input_active == False:
+                self.add_player_turn_action_field_widget()
+            else:
+                if self.gui_turn_action is None:
+                    self.send_input = False
+                    return
+                
+                if not self.send_input:
+                    return
+
+                if self.gui_turn_action not in valid_player_turn_actions: 
+                    return
+
+                split_player_active = False
+                if self.split_player is current_player:
+                    split_player_active = True
+
+                turn_finished, self.split_player = self.gamestate_manager.player_turn(current_player, self.gui_turn_action)
+
+                # UPDATE GUI CARDS / DRAW ALL CARDS OF PLAYER NEWLY
+                for i, card in enumerate(current_player.cards):
+                    # create new piles if needed
+                    player_mats = self.player_mats_list[self.active_player_index+1]
+                    if i >= len(player_mats):
+                        pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+                        if self.active_player_index < self.NUMBER_OF_HANDS_PER_SIDE:
+                            pile.position = player_mats[-1].position[0] + self.MAT_X_OFFSET, player_mats[-1].position[1]
+                            
+                        else:
+                            pile.position = player_mats[-1].position[0] - self.MAT_X_OFFSET, player_mats[-1].position[1]
+                            
+                        player_mats.append(pile) 
+                        self.pile_mat_list.append(pile)
+                                      
+                    GUI_card = GUICard(card.color_string, card.image_value, self.CARD_SCALE)
+                    GUI_card.position = player_mats[i].position
+                    self.card_list.append(GUI_card)
+
+                if split_player_active:
+                    if turn_finished:
+                        self.split_player = None
+                    else:
+                        self.split_player = current_player
+                elif turn_finished and self.split_player is None:
+                    self.gui_turn_action = None
+                    self.active_player_index += 1
+                
+                
+                self.send_input = False
+        else:
+            if self.input_active:
+                self.remove_widgets()
+            else:
+                turn_action = current_player.make_turn()
+                if turn_action not in valid_player_turn_actions: 
+                    return
+
+                split_player_active = False
+                if self.split_player is current_player:
+                    split_player_active = True
+
+                turn_finished, self.split_player = self.gamestate_manager.player_turn(current_player, turn_action)
+
+                # UPDATE GUI CARDS
+                for i, card in enumerate(current_player.cards):
+                    # create new piles if needed
+                    player_mats = self.player_mats_list[self.active_player_index+1]
+                    if i >= len(player_mats):
+                        pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+                        if self.active_player_index < self.NUMBER_OF_HANDS_PER_SIDE:
+                            pile.position = player_mats[-1].position[0] + self.MAT_X_OFFSET, player_mats[-1].position[1]
+                            
+                        else:
+                            pile.position = player_mats[-1].position[0] - self.MAT_X_OFFSET, player_mats[-1].position[1]
+                            
+                        player_mats.append(pile) 
+                        self.pile_mat_list.append(pile)
+                                      
+                    GUI_card = GUICard(card.color_string, card.image_value, self.CARD_SCALE)
+                    GUI_card.position = player_mats[i].position
+                    self.card_list.append(GUI_card)
+                    
+
+                if split_player_active:
+                    if turn_finished:
+                        self.split_player = None
+                    else:
+                        self.split_player = current_player
+                elif turn_finished and self.split_player is None:
+                    self.active_player_index += 1
+
+
+        if self.active_player_index == len(self.player_list):
+            self.active_player_index = None
+            self.remove_widgets()
 
     def dealer_phase(self):
         # TODO: HANDLE DEALER TURN AND GUI
@@ -357,9 +541,6 @@ class GUIGameView(arcade.View):
                 self.send_input = True
             
 
-    def on_click_submit(self, event):
-        self.send_input = True
-
     def add_bet_input_field_widget(self):
         self.input_active = True
         self.ui_manager.add(
@@ -367,6 +548,15 @@ class GUIGameView(arcade.View):
                 anchor_x="center_x",
                 anchor_y="center_y",
                 child=self.v_box)
+        )
+
+    def add_player_turn_action_field_widget(self):
+        self.input_active = True
+        self.ui_manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                child=self.turn_option_box)
         )
 
         # BORDER RESULTS IN A BUG WHERE CHILD IS DRAWN MULTIPLE TIMES
@@ -380,7 +570,7 @@ class GUIGameView(arcade.View):
 
 
 
-    def remove_bet_input_field_widget(self):
+    def remove_widgets(self):
         self.ui_manager.clear()
         self.input_active = False
 

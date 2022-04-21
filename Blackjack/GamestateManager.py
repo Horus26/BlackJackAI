@@ -172,7 +172,7 @@ class GamestateManager :
         else:
             return valid_actions_list
         
-        print("CHECKING FOR SPLIT")
+        # print("CHECKING FOR SPLIT")
         # check if split is valid
         if player.check_split_valid(): valid_actions_list.append(PLAYER_ACTIONS["Split"])
 
@@ -182,6 +182,9 @@ class GamestateManager :
         return valid_actions_list
     
     def player_turn(self, player, turn_action):               
+        if player.get_hand_value() == 21:
+            return (True, None)
+
         if turn_action == PLAYER_ACTIONS["Stand"]:
             return (True, None)
 

@@ -7,6 +7,8 @@ class GreedyAIPlayer(Player) :
 
     def make_turn(self):
         # print("{} Hit".format(self.name))
+        if self.get_hand_value == 21:
+            return PLAYER_ACTIONS["Stand"]
         return PLAYER_ACTIONS["Hit"]
 
     def determine_bet(self):
