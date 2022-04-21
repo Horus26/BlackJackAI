@@ -435,23 +435,9 @@ class GUIGameView(arcade.View):
                 turn_finished, self.split_player = self.gamestate_manager.player_turn(current_player, self.gui_turn_action)
 
                 # UPDATE GUI CARDS / DRAW ALL CARDS OF PLAYER NEWLY
-                for i, card in enumerate(current_player.cards):
-                    # create new piles if needed
-                    player_mats = self.player_mats_list[self.active_player_index+1]
-                    if i >= len(player_mats):
-                        pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-                        if self.active_player_index < self.NUMBER_OF_HANDS_PER_SIDE:
-                            pile.position = player_mats[-1].position[0] + self.MAT_X_OFFSET, player_mats[-1].position[1]
-                            
-                        else:
-                            pile.position = player_mats[-1].position[0] - self.MAT_X_OFFSET, player_mats[-1].position[1]
-                            
-                        player_mats.append(pile) 
-                        self.pile_mat_list.append(pile)
-                                      
-                    GUI_card = GUICard(card.color_string, card.image_value, self.CARD_SCALE)
-                    GUI_card.position = player_mats[i].position
-                    self.card_list.append(GUI_card)
+                player_mats = self.player_mats_list[self.active_player_index+1]
+                reverse_offset = False if self.active_player_index < self.NUMBER_OF_HANDS_PER_SIDE else True
+                self.update_gui_cards(current_player.cards, player_mats, reverse_offset)
 
                 if split_player_active:
                     if turn_finished:
@@ -479,25 +465,10 @@ class GUIGameView(arcade.View):
                 turn_finished, self.split_player = self.gamestate_manager.player_turn(current_player, turn_action)
 
                 # UPDATE GUI CARDS
-                for i, card in enumerate(current_player.cards):
-                    # create new piles if needed
-                    player_mats = self.player_mats_list[self.active_player_index+1]
-                    if i >= len(player_mats):
-                        pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-                        if self.active_player_index < self.NUMBER_OF_HANDS_PER_SIDE:
-                            pile.position = player_mats[-1].position[0] + self.MAT_X_OFFSET, player_mats[-1].position[1]
-                            
-                        else:
-                            pile.position = player_mats[-1].position[0] - self.MAT_X_OFFSET, player_mats[-1].position[1]
-                            
-                        player_mats.append(pile) 
-                        self.pile_mat_list.append(pile)
-                                      
-                    GUI_card = GUICard(card.color_string, card.image_value, self.CARD_SCALE)
-                    GUI_card.position = player_mats[i].position
-                    self.card_list.append(GUI_card)
+                player_mats = self.player_mats_list[self.active_player_index+1]
+                reverse_offset = False if self.active_player_index < self.NUMBER_OF_HANDS_PER_SIDE else True
+                self.update_gui_cards(current_player.cards, player_mats, reverse_offset)
                     
-
                 if split_player_active:
                     if turn_finished:
                         self.split_player = None
@@ -514,6 +485,28 @@ class GUIGameView(arcade.View):
     def dealer_phase(self):
         # TODO: HANDLE DEALER TURN AND GUI
         self.gamestate_manager.dealer_turn()
+        dealer_mats = self.player_mats_list[0]
+        
+        self.update_gui_cards(self.gamestate_manager.dealer.cards, dealer_mats)
+        self.game_phase += 1
+
+    def update_gui_cards(self, card_list, mats_list, reverse_offset = False):
+        x_offset = self.MAT_X_OFFSET
+        if reverse_offset:
+            x_offset = -self.MAT_X_OFFSET
+        
+        for i, card in enumerate(card_list):
+            # create new piles if needed
+            if i >= len(mats_list):
+                pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+                pile.position = mats_list[-1].position[0] + x_offset, mats_list[-1].position[1]
+                    
+                mats_list.append(pile) 
+                self.pile_mat_list.append(pile)
+                                
+            GUI_card = GUICard(card.color_string, card.image_value, self.CARD_SCALE)
+            GUI_card.position = mats_list[i].position
+            self.card_list.append(GUI_card)
 
     def evaluation_phase(self):
         # TODO: HANDLE EVALUATION AND GUI
