@@ -117,7 +117,7 @@ class GUIGameView(arcade.View):
                 x_text_name_position =  x_start_position + 0.5 * self.MAT_WIDTH + x_offset
                 text_anchor_x = "right"
             self.player_text_list.append(arcade.Text(
-                self.player_list[i].name,
+                "{} ({})".format(self.player_list[i].name, self.player_list[i].money),
                 start_x = x_text_name_position,
                 start_y = TOP_Y - row_index * MAT_Y_OFFSET + self.MAT_HEIGHT / 2,
                 color = arcade.color.BLACK,
@@ -342,7 +342,7 @@ class GUIGameView(arcade.View):
                     return
 
                 if  self.check_bet_input_valid(bet, current_player):
-                    self.player_text_list[self.active_player_index+1].text += ": {}".format(bet)
+                    self.player_text_list[self.active_player_index+1].text = "{} ({}): {}".format(self.player_list[self.active_player_index].name, self.player_list[self.active_player_index].money, bet)
                     if self.active_player_index+1 > self.NUMBER_OF_HANDS_PER_SIDE-1:
                         x_offset_gui_player = -(len(str(bet)) + 2)
                         self.player_text_list[self.active_player_index+1].x += x_offset_gui_player
@@ -356,7 +356,7 @@ class GUIGameView(arcade.View):
             else:
                 bet = current_player.get_bet()
                 if self.check_bet_input_valid(bet, current_player):
-                    self.player_text_list[self.active_player_index+1].text += ": {}".format(bet)
+                    self.player_text_list[self.active_player_index+1].text = "{} ({}): {}".format(self.player_list[self.active_player_index].name, self.player_list[self.active_player_index].money, bet)
                     if self.active_player_index+1 > self.NUMBER_OF_HANDS_PER_SIDE-1:
                         x_offset_gui_player = -(len(str(bet)) + 2)
                         self.player_text_list[self.active_player_index+1].x += x_offset_gui_player
@@ -418,6 +418,9 @@ class GUIGameView(arcade.View):
             print("DEALER BLACKJACK")
             exit(10)
 
+        
+        # update name and money
+        self.update_player_name_line()
         self.game_phase += 1
 
     def player_turn_phase(self):
@@ -468,7 +471,7 @@ class GUIGameView(arcade.View):
                 # UPDATE GUI CARDS / DRAW ALL CARDS OF PLAYER NEWLY
                 player_mats = self.player_mats_list[self.active_player_index+1]
                 reverse_offset = False if self.active_player_index < self.NUMBER_OF_HANDS_PER_SIDE else True
-                self.update_gui_cards(current_player.cards, player_mats, reverse_offset)
+                self.update_gui_player(current_player.cards, player_mats, reverse_offset, self.active_player_index)
 
                 if split_player_active:
                     if turn_finished:
@@ -498,7 +501,7 @@ class GUIGameView(arcade.View):
                 # UPDATE GUI CARDS
                 player_mats = self.player_mats_list[self.active_player_index+1]
                 reverse_offset = False if self.active_player_index < self.NUMBER_OF_HANDS_PER_SIDE else True
-                self.update_gui_cards(current_player.cards, player_mats, reverse_offset)
+                self.update_gui_player(current_player.cards, player_mats, reverse_offset, self.active_player_index)
                     
                 if split_player_active:
                     if turn_finished:
@@ -520,10 +523,19 @@ class GUIGameView(arcade.View):
         self.gamestate_manager.dealer_turn()
         dealer_mats = self.player_mats_list[0]
         
-        self.update_gui_cards(self.gamestate_manager.dealer.cards, dealer_mats)
+        self.update_gui_player(self.gamestate_manager.dealer.cards, dealer_mats)
         self.game_phase += 1
+    
+    def update_player_name_line(self, index=None):
+        if index is None:
+            for i in range(len(self.player_text_list)-1):
+                self.player_text_list[i+1].text = "{} ({}): {}".format(self.player_list[i].name, self.player_list[i].money, self.player_list[i].current_bet)
+        else:
+          self.player_text_list[index+1].text = "{} ({}): {}".format(self.player_list[index].name, self.player_list[index].money, self.player_list[index].current_bet)  
 
-    def update_gui_cards(self, card_list, mats_list, reverse_offset = False):
+    def update_gui_player(self, card_list, mats_list, reverse_offset = False, index=None):
+        self.update_player_name_line(index)
+
         x_offset = self.MAT_X_OFFSET
         if reverse_offset:
             x_offset = -self.MAT_X_OFFSET
@@ -556,6 +568,8 @@ class GUIGameView(arcade.View):
         results_string_list += ["\n"]
         print("FINAL STRING: {}".format(results_string_list))
         self.add_results_widget(''.join(results_string_list))
+
+        self.update_player_name_line()
         self.game_phase += 1
 
     def on_key_press(self, key, key_modifiers):

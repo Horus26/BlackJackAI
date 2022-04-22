@@ -70,6 +70,7 @@ class Player(ABC) :
         print("Player {} instant blackjack --> winning: {}".format(self.name, self.current_bet*2.5))
         win = round(self.current_bet * 2.5, 2)
         self.money += win
+        self.current_bet = 0
         return win
     
     def win_round(self):
