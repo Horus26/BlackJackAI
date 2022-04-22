@@ -52,6 +52,7 @@ class GUIGameView(arcade.View):
         self.turn_option_box = None
         self.split_player = None
         self.gui_turn_action = None
+        self.results_widget_box = None
 
     def setup(self, player_list):
         """ Set up the game variables. Call to re-start the game. """
@@ -60,6 +61,13 @@ class GUIGameView(arcade.View):
         
         self.game_phase = 0
         self.active_player_index = 0
+        # (reset) card list
+        self.card_list = arcade.SpriteList()
+        # (reset) Sprite list with all the mats that cards lay on
+        self.pile_mat_list: arcade.SpriteList = arcade.SpriteList()
+        # reset gamestate manager
+        if self.gamestate_manager is not None:
+            self.gamestate_manager.clean_round()
 
         if not player_list:
             raise RuntimeError("There were no players specified") 
@@ -69,26 +77,20 @@ class GUIGameView(arcade.View):
         # prepare a list for every player (for convenient access and adding of mats)
         self.player_mats_list = [[] for _ in range(len(player_list)+1)]
 
-        # ---  Create the mats the cards go on.
-
-        # Sprite list with all the mats that cards lay on
-        self.pile_mat_list: arcade.SpriteList = arcade.SpriteList()
-
-        # Create players start hands placeholder
+        # prepare settings for displaying
         self.NUMBER_OF_HANDS_PER_SIDE = math.ceil(len(self.player_list) / 2)
         print("PLAYER COUNT: {}".format(len(self.player_list)))
         (self.CARD_SCALE, self.MAT_HEIGHT, self.MAT_WIDTH, self.MAT_X_OFFSET, MAT_Y_OFFSET, BOTTOM_Y, TOP_Y, START_X) = get_gui_constants(self.NUMBER_OF_HANDS_PER_SIDE, self.SCREEN_HEIGHT)
         print("NUMBER_OF_HANDS_PER_SIDE: {}".format(self.NUMBER_OF_HANDS_PER_SIDE))
         
 
-        #  TODO: REMOVE / MOVE DOWN AGAIN
-        self.card_list = arcade.SpriteList()
-
+        # draw player names, dealer name and according mats for cards
         self.DEFAULT_FONT_SIZE = 60 * self.CARD_SCALE
         x_start_position = START_X
         x_text_name_position = x_start_position - self.MAT_WIDTH / 2
         text_anchor_x = "left"
         row_index = 0
+
         # prepare for drawing dealer name
         self.player_text_list.append(arcade.Text(
             "Dealer",
@@ -151,12 +153,13 @@ class GUIGameView(arcade.View):
         #         card.position = START_X + counter * MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * MAT_HEIGHT + MAT_HEIGHT
         #         self.card_list.append(card)
         #         # counter += 1
-        card = GUICard("Back_green", "5", self.CARD_SCALE)
-        card.position = START_X, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT
-        self.card_list.append(card)
+        # card = GUICard("Back_green", "5", self.CARD_SCALE)
+        # card.position = START_X, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT
+        # self.card_list.append(card)
 
 
         # prepare ui box for player bet input
+        # region 
         # Create a text label
         label = arcade.gui.UILabel(
             text="Enter bet",
@@ -183,9 +186,10 @@ class GUIGameView(arcade.View):
         self.v_box = UIBoxLayout(
             children=[label, self.ui_input_box, submit_button]
         )
-
+        # endregion
 
         # prepare ui box for player turn options
+        # region
         self.turn_option_box = arcade.gui.UIBoxLayout()
 
         label = arcade.gui.UILabel(
@@ -242,6 +246,31 @@ class GUIGameView(arcade.View):
         self.turn_option_box.add(option_button_3)
 
         self.turn_option_box.add(label)
+        # endregion
+
+        # prepare widget for displaying results
+        # region
+        self.results_widget_box = arcade.gui.UIBoxLayout()
+
+        label = arcade.gui.UILabel(
+            text="Results",
+            text_color=arcade.color.DARK_RED,
+            font_size=self.DEFAULT_FONT_SIZE*2,
+            font_name="Kenney Future")
+
+        results_text = arcade.gui.UITextArea(
+        text="",
+        height=300,
+        text_color=arcade.color.DARK_RED,
+        font_size=self.DEFAULT_FONT_SIZE,
+        font_name="Kenney Future",
+        size_hint_min=(400, 300)
+        )    
+
+        self.results_widget_box.add(label)
+        self.results_widget_box.add(results_text)
+        # endregion
+
 
        
 
@@ -382,6 +411,7 @@ class GUIGameView(arcade.View):
 
         
         dealer_blackjack = self.gamestate_manager.evaluate_dealt_cards()
+
         # TODO: GUI HANDLE DEALER BLACKJACK INSTEAD OF EXITING GAME
         
         if dealer_blackjack:
@@ -403,6 +433,7 @@ class GUIGameView(arcade.View):
             current_player = self.player_list[self.active_player_index]
             if current_player not in self.gamestate_manager.current_playing_players:
                 self.active_player_index += 1
+                self.check_player_index()
                 return
         
         else:
@@ -476,14 +507,16 @@ class GUIGameView(arcade.View):
                         self.split_player = current_player
                 elif turn_finished and self.split_player is None:
                     self.active_player_index += 1
+        self.check_player_index()
 
 
+    def check_player_index(self):
         if self.active_player_index == len(self.player_list):
             self.active_player_index = None
             self.remove_widgets()
 
     def dealer_phase(self):
-        # TODO: HANDLE DEALER TURN AND GUI
+        # HANDLE DEALER TURN AND GUI
         self.gamestate_manager.dealer_turn()
         dealer_mats = self.player_mats_list[0]
         
@@ -509,8 +542,21 @@ class GUIGameView(arcade.View):
             self.card_list.append(GUI_card)
 
     def evaluation_phase(self):
-        # TODO: HANDLE EVALUATION AND GUI
-        self.gamestate_manager.evaluate_round()  
+        # HANDLE EVALUATION AND GUI
+        winning_player_list = self.gamestate_manager.evaluate_round() 
+        results_string_list = []
+        for i, (player, player_win) in enumerate(winning_player_list):
+            print("\n{} Win: {}".format(player.name, player_win))
+            results_string_list += ["\n"]
+            results_string_list += ["{} Win: {}".format(player.name, player_win)]
+
+        if len(results_string_list) == 0:
+            results_string_list = ["Dealer wins\n No players left that did not go bust"]
+        
+        results_string_list += ["\n"]
+        print("FINAL STRING: {}".format(results_string_list))
+        self.add_results_widget(''.join(results_string_list))
+        self.game_phase += 1
 
     def on_key_press(self, key, key_modifiers):
         """
@@ -561,7 +607,17 @@ class GUIGameView(arcade.View):
 
         # self.ui_manager.add(border)
 
+    def add_results_widget(self, text):
+        self.input_active = True
+        self.results_widget_box.children[-1].text = text
+        self.results_widget_box.children[-1].fit_content()
 
+        self.ui_manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                child=self.results_widget_box)
+        )    
 
     def remove_widgets(self):
         self.ui_manager.clear()

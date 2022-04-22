@@ -60,17 +60,24 @@ class Player(ABC) :
     
     def tie_round(self):
         print("Player {} tie --> keeping bet: {}".format(self.name, self.current_bet))
-        self.money += self.current_bet
+        win = self.current_bet
+        self.money += win
         self.clear_cards()
+        return win
+        
 
     def dealt_cards_blackjack(self):
         print("Player {} instant blackjack --> winning: {}".format(self.name, self.current_bet*2.5))
-        self.money += round(self.current_bet * 2.5, 2)
+        win = round(self.current_bet * 2.5, 2)
+        self.money += win
+        return win
     
     def win_round(self):
         print("Player {} winning: {}".format(self.name, self.current_bet*2))
-        self.money += (2 * self.current_bet)
+        win = (2 * self.current_bet)
+        self.money += win
         self.clear_cards()
+        return win
 
     def check_hit_valid(self):
         if self.split_this_round and self.cards[0].value == 1:

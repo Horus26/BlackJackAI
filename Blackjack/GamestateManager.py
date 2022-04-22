@@ -311,10 +311,13 @@ class GamestateManager :
         print("Dealer hand value: {}".format(dealer_hand_value))
         self.dealer.print_hand(second_card_visible=True)
 
+        winning_player_list = []
+
         # check if dealers busts and therefore all remaining players win
         if dealer_hand_value > 21:
             for player in self.current_playing_players + self.split_player_round_list:
-                player.win_round()
+                win = player.win_round()
+                winning_player_list.append((player, win))
         else:
             # check for every player against dealer
             for player in self.current_playing_players + self.split_player_round_list:
@@ -325,17 +328,19 @@ class GamestateManager :
                 if hand_value > 21:
                     player.lose_round()
                 elif hand_value > dealer_hand_value:
-                    player.win_round()
+                    win = player.win_round()
+                    winning_player_list.append((player, win))
                 elif hand_value == dealer_hand_value:
-                    player.tie_round()
+                    win = player.tie_round()
+                    winning_player_list.append((player, win))
                 else:
                     player.lose_round()
 
-
         if len(self.split_player_round_list) + len(self.current_playing_players) == 0:
             print("No players remaining that did not go bust")
-
         print()
+
+        return winning_player_list
 
     def clean_round(self):
         self.split_player_round_list.clear()
