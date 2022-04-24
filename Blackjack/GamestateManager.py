@@ -21,7 +21,7 @@ class GamestateManager :
         if number_of_carddecks < 1: number_of_carddecks = 1
         
         for i in range(number_of_carddecks):
-            self.playable_carddeck.extend(Carddeck().deck)
+            self.playable_carddeck.extend(Carddeck(carddeck_number=i).deck)
 
         if len(player_objects_list) < 1: return False
         for player_object in player_objects_list:

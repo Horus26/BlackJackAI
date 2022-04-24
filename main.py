@@ -39,8 +39,11 @@ def main():
 
 
 def init_gui(player_list):
-    window = arcade.Window(800, 600, "Blackjack")
-    gui_game_view = GUIGameView()
+    width = 1024
+    height = 768
+    title = "Blackjack"
+    window = arcade.Window(width, height, title)
+    gui_game_view = GUIGameView(width, height, title)
     window.show_view(gui_game_view)
     gui_game_view.setup(player_list)
     return gui_game_view
