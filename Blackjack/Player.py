@@ -81,7 +81,7 @@ class Player(ABC) :
         return win
 
     def check_hit_valid(self):
-        if self.split_this_round and self.cards[0].value == 1:
+        if (self.split_this_round and self.cards[0].value == 1) or (self.get_hand_value == 21 and self.ace_counts == 0):
             return False
         return True
 

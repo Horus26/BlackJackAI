@@ -607,6 +607,13 @@ class GUIGameView(arcade.View):
 
         # draw initial cards of split player if split was action in this turn (and offset cards from original player)
         if self.split_player is not None and not split_player_active:
+            # remove card from original player that was splitted to split player
+            key = self.split_player.cards[0].unique_id
+            old_card = self.card_dict_data_access[key]
+            if old_card in self.card_list:
+                self.card_list.remove(old_card)
+                self.card_dict_data_access.pop(key)
+
             split_mat_list = self.split_player_mats_dict[self.active_player_index]
             for i, card in enumerate(self.split_player.cards):
                 pile = arcade.SpriteSolidColor(int(self.MAT_WIDTH * scale), int(self.MAT_HEIGHT * scale), arcade.csscolor.DARK_OLIVE_GREEN)

@@ -182,7 +182,7 @@ class GamestateManager :
         return valid_actions_list
     
     def player_turn(self, player, turn_action):               
-        if player.get_hand_value() == 21:
+        if player.get_hand_value() == 21 and turn_action is not PLAYER_ACTIONS["Double"]:
             return (True, None)
 
         if turn_action == PLAYER_ACTIONS["Stand"]:

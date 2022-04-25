@@ -23,5 +23,7 @@ class SplitTempPlayer(Player) :
     
     def win_round(self):
         print("Player {} winning: {}".format(self.parent_player.name, self.current_bet*2))
-        self.parent_player.money += 2 * self.current_bet
+        win = 2 * self.current_bet
+        self.parent_player.money += win
+        return win
 
