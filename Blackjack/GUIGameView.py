@@ -1,5 +1,4 @@
 import math
-from posixpath import split
 import arcade
 import arcade.gui
 from arcade.gui import UIManager, UIBoxLayout, UIFlatButton
@@ -25,7 +24,7 @@ class GUIGameView(arcade.View):
         # dict for easier manipulation of existing cards (relevant for moving cards in case of split)
         self.card_dict_data_access = None
 
-        # list holding a list of cards for every player
+        # list holding a list of mats for every player
         self.player_mats_list = None
         self.split_player_mats_dict = None
 
@@ -125,7 +124,7 @@ class GUIGameView(arcade.View):
             self.player_text_list.append(arcade.Text(
                 "{} ({})".format(self.player_list[i].name, self.player_list[i].money),
                 start_x = x_text_name_position,
-                start_y = TOP_Y - row_index * MAT_Y_OFFSET + self.MAT_HEIGHT / 2,
+                start_y = TOP_Y - row_index * MAT_Y_OFFSET,
                 color = arcade.color.BLACK,
                 font_size = self.DEFAULT_FONT_SIZE,
                 anchor_x = text_anchor_x
@@ -134,7 +133,7 @@ class GUIGameView(arcade.View):
             # prepare start hand mats (2) for every player
             for j in range(2):
                 pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-                pile.position = x_start_position + j * x_offset, TOP_Y - row_index * MAT_Y_OFFSET
+                pile.position = x_start_position + j * x_offset, TOP_Y - row_index * MAT_Y_OFFSET - self.MAT_HEIGHT * 0.6
                 self.pile_mat_list.append(pile)
                 self.player_mats_list[i+1].append(pile)
             
@@ -150,19 +149,6 @@ class GUIGameView(arcade.View):
                     row_index -= 1
             else:
                 row_index += 1
-
-        # Create every card
-        # for card_suit in CARD_SUITS:
-        #     counter = 0
-        #     for card_value in CARD_VALUES:
-        #         card = GUICard(card_suit, card_value, CARD_SCALE)
-        #         card.position = START_X + counter * MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * MAT_HEIGHT + MAT_HEIGHT
-        #         self.card_list.append(card)
-        #         # counter += 1
-        # card = GUICard("Back_green", "5", self.CARD_SCALE)
-        # card.position = START_X, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT
-        # self.card_list.append(card)
-
 
         # prepare ui box for player bet input
         # region 
@@ -443,6 +429,11 @@ class GUIGameView(arcade.View):
         
         # update name and money
         self.update_player_name_line()
+        
+        # mark first players card as playing player
+        player_mats_before = self.player_mats_list[1]
+        self.update_mats_color(player_mats_before, False)
+        
         self.game_phase += 1
 
     def player_turn_phase(self):
@@ -466,8 +457,9 @@ class GUIGameView(arcade.View):
             if current_player not in self.gamestate_manager.split_player_round_list:
                 self.split_player = None
                 return
-        
 
+
+        # find all valid actions
         valid_player_turn_actions = self.gamestate_manager.get_valid_player_actions(current_player)
 
         if current_player.gui_player:
@@ -500,15 +492,7 @@ class GUIGameView(arcade.View):
                 draw_split_player = True if self.split_player is not None or current_player.split_this_round else False
                 self.update_gui_player(current_player.cards, player_mats, reverse_offset, self.active_player_index, draw_split_player, split_player_active)
 
-                if split_player_active:
-                    if turn_finished:
-                        self.split_player = None
-                    else:
-                        self.split_player = current_player
-                elif turn_finished and self.split_player is None:
-                    self.gui_turn_action = None
-                    self.active_player_index += 1
-                
+                self.handle_after_turn_action(split_player_active, turn_finished, current_player)
                 
                 self.send_input = False
         else:
@@ -535,20 +519,61 @@ class GUIGameView(arcade.View):
                 draw_split_player = True if self.split_player is not None or current_player.split_this_round else False
                 self.update_gui_player(current_player.cards, player_mats, reverse_offset, self.active_player_index, draw_split_player, split_player_active)
     
-                if split_player_active:
-                    if turn_finished:
-                        self.split_player = None
-                    else:
-                        self.split_player = current_player
-                elif turn_finished and self.split_player is None:
-                    self.active_player_index += 1
+                self.handle_after_turn_action(split_player_active, turn_finished, current_player)
+
         self.check_player_index()
 
+    def handle_after_turn_action(self, split_player_active, turn_finished, current_player):
+            if split_player_active:
+                if turn_finished:
+                    self.split_player = None
+                    self.update_mats_color(self.split_player_mats_dict[self.active_player_index], True)
+                    if self.active_player_index+1 < len(self.player_list):
+                        self.update_mats_color(self.split_player_mats_dict[self.active_player_index+1], False)
+
+                else:
+                    self.split_player = current_player
+            elif turn_finished and self.split_player is None:
+                self.gui_turn_action = None
+                self.active_player_index += 1
+                # recreate original card color for the last player
+                self.update_mats_color(self.player_mats_list[self.active_player_index],True)
+                if self.active_player_index < len(self.player_list):    
+                    # mark cards for next player
+                    self.update_mats_color(self.player_mats_list[self.active_player_index+1], False)
+
+            elif turn_finished:
+                # recreate original card color for the last player
+                self.update_mats_color(self.player_mats_list[self.active_player_index+1], True)
+
+    def update_mats_color(self, player_mats_list, original_color = True):
+        new_mats_list = []
+        for mat in list(player_mats_list):
+            width = int(mat.width)
+            height = int(mat.height)
+            position = mat.position
+            self.pile_mat_list.remove(mat)
+            player_mats_list.remove(mat)
+            new_mat : arcade.SpriteSolidColor = None
+            if original_color:
+                new_mat = arcade.SpriteSolidColor(width, height, arcade.csscolor.DARK_OLIVE_GREEN)
+            else:
+                new_mat = arcade.SpriteSolidColor(width, height, arcade.csscolor.DARK_RED)
+            
+            new_mat.position = position
+            new_mats_list.append(new_mat)
+
+        for new_mat in new_mats_list:
+            self.pile_mat_list.append(new_mat)
+            player_mats_list.append(new_mat)
+
+        e=1
 
     def check_player_index(self):
         if self.active_player_index == len(self.player_list):
             self.active_player_index = None
             self.remove_widgets()
+
 
     def dealer_phase(self):
         # HANDLE DEALER TURN AND GUI
@@ -570,8 +595,10 @@ class GUIGameView(arcade.View):
         self.update_player_name_line(index)
 
         scale = 1
+        offset_factor = 0
         if draw_split_player:
             scale = 0.5
+            offset_factor = 0.6
 
 
         x_offset = self.MAT_X_OFFSET
@@ -579,12 +606,17 @@ class GUIGameView(arcade.View):
             x_offset = -self.MAT_X_OFFSET
         
         for i, card in enumerate(player_card_list):
+            # only scale width and height of existing mats once
+            if self.split_player is not None and not split_player_active:
+                mats_list[i].width *= scale
+                mats_list[i].height *= scale
+            
             GUI_card = GUICard(card.color_string, card.image_value, self.CARD_SCALE * scale)
             key = card.unique_id
 
             # create new piles if needed
             if i >= len(mats_list):
-                pile = arcade.SpriteSolidColor(int(self.MAT_WIDTH * scale), int(self.MAT_HEIGHT * scale), arcade.csscolor.DARK_OLIVE_GREEN)
+                pile = arcade.SpriteSolidColor(int(self.MAT_WIDTH * scale), int(self.MAT_HEIGHT * scale), arcade.csscolor.DARK_RED)
                 pile.position = mats_list[-1].position[0] + x_offset, mats_list[-1].position[1]
                     
                 mats_list.append(pile) 
@@ -596,29 +628,30 @@ class GUIGameView(arcade.View):
                     self.card_list.remove(old_card)
                     self.card_dict_data_access.pop(key)
             
-            # only scale width and height of existing mats once
+            # handle offset when splitting
             if self.split_player is not None and not split_player_active:
-                mats_list[i].width *= scale
-                mats_list[i].height *= scale
-                
+                mats_list[i].position = mats_list[i].position[0], mats_list[i].position[1] + mats_list[i].height * offset_factor
+            
             GUI_card.position = mats_list[i].position
             self.card_list.append(GUI_card)
             self.card_dict_data_access[key] = GUI_card
 
         # draw initial cards of split player if split was action in this turn (and offset cards from original player)
         if self.split_player is not None and not split_player_active:
-            # remove card from original player that was splitted to split player
-            key = self.split_player.cards[0].unique_id
-            old_card = self.card_dict_data_access[key]
-            if old_card in self.card_list:
-                self.card_list.remove(old_card)
-                self.card_dict_data_access.pop(key)
 
             split_mat_list = self.split_player_mats_dict[self.active_player_index]
             for i, card in enumerate(self.split_player.cards):
-                pile = arcade.SpriteSolidColor(int(self.MAT_WIDTH * scale), int(self.MAT_HEIGHT * scale), arcade.csscolor.DARK_OLIVE_GREEN)
+                # remove legacy drew card from original player that was splitted to split player
+                key = card.unique_id
+                if key in self.card_dict_data_access:
+                    old_card = self.card_dict_data_access[key]
+                    if old_card in self.card_list:
+                        self.card_list.remove(old_card)
+                        self.card_dict_data_access.pop(key)
+
+                pile = arcade.SpriteSolidColor(int(self.MAT_WIDTH * scale), int(self.MAT_HEIGHT * scale), arcade.csscolor.DARK_RED)
                 if i == 0:
-                    pile.position = mats_list[0].position[0], mats_list[0].position[1] - mats_list[i].height
+                    pile.position = mats_list[0].position[0], mats_list[0].position[1] - mats_list[i].height * offset_factor * 2
                 else:
                     pile.position = split_mat_list[-1].position[0] + x_offset, split_mat_list[-1].position[1]
                     
