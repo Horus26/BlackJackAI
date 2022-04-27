@@ -4,7 +4,7 @@ import arcade.gui
 from arcade.gui import UIManager, UIBoxLayout, UIFlatButton
 from Blackjack.Constants import PLAYER_ACTIONS
 from Blackjack.GamestateManager import GamestateManager
-from .GUIConstants import get_gui_constants, VERTICAL_MARGIN_PERCENT, CARD_SUITS, CARD_VALUES
+from .GUIConstants import GUI_MENU_ACTIONS, get_gui_constants, VERTICAL_MARGIN_PERCENT, CARD_SUITS, CARD_VALUES
 from .GUICard import GUICard
 
 
@@ -48,13 +48,15 @@ class GUIGameView(arcade.View):
         self.input_active = False
         self.active_player_index = 0
         self.send_input = False
-        self.v_box = None
+        self.bet_widget_box = None
         self.ui_input_box = None
         self.NUMBER_OF_HANDS_PER_SIDE = 0
         self.CARD_SCALE = 1
         self.turn_option_box = None
+        self.menu_option_box = None
         self.split_player = None
         self.gui_turn_action = None
+        self.gui_menu_action = None
         self.results_widget_box = None
 
     def setup(self, player_list):
@@ -109,7 +111,7 @@ class GUIGameView(arcade.View):
         # prepare dealer start hand mats
         for j in range(2):
             pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            pile.position = self.SCREEN_WIDTH/2 - self.MAT_X_OFFSET + j * self.MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT
+            pile.position = self.SCREEN_WIDTH/2 - self.MAT_X_OFFSET + j * self.MAT_X_OFFSET, TOP_Y + 2*VERTICAL_MARGIN_PERCENT * self.MAT_HEIGHT + self.MAT_HEIGHT * 0.8
             self.pile_mat_list.append(pile)
             # ! dealer is placed at position 0 for convenience !
             self.player_mats_list[0].append(pile)
@@ -175,7 +177,7 @@ class GUIGameView(arcade.View):
          )
 
         self.ui_input_box.cursor_index = len(self.ui_input_box.text)
-        self.v_box = UIBoxLayout(
+        self.bet_widget_box = UIBoxLayout(
             children=[label, self.ui_input_box, submit_button]
         )
         # endregion
@@ -263,7 +265,45 @@ class GUIGameView(arcade.View):
         self.results_widget_box.add(results_text)
         # endregion
 
+        # prepare ui box for menu buttons
+        # region
+        self.menu_option_box = arcade.gui.UIBoxLayout()
 
+        menu_label = arcade.gui.UILabel(
+            text="Menu",
+            text_color=arcade.color.DARK_RED,
+            font_size=self.DEFAULT_FONT_SIZE*2,
+            font_name="Kenney Future")
+        self.menu_option_box.add(menu_label)
+        
+        menu_options = ["Start Round", "Exit"]
+
+        menu_option_button = UIFlatButton(
+            color=arcade.color.DARK_BLUE_GRAY,
+            text=menu_options[0])
+        # Handle Clicks
+        @menu_option_button.event("on_click")
+        def on_click_flatbutton(event):
+            self.gui_menu_action = GUI_MENU_ACTIONS[menu_options[0]]
+            self.send_input = True
+            print("GUI MENU ACTION: {}, {}".format(menu_options[0], self.gui_menu_action))
+        self.menu_option_box.add(menu_option_button)
+        
+        menu_option_button_1 = UIFlatButton(
+            color=arcade.color.DARK_BLUE_GRAY,
+            text=menu_options[1])
+        # Handle Clicks
+        @menu_option_button_1.event("on_click")
+        def on_click_flatbutton(event):
+            self.gui_menu_action = GUI_MENU_ACTIONS[menu_options[1]]
+            self.send_input = True
+            print("GUI MENU ACTION: {}, {}".format(menu_options[1], self.gui_menu_action))
+        self.menu_option_box.add(menu_option_button_1)
+
+        # add menu to ui_manager
+        self.add_menu_widget()
+
+        # endregion
        
 
 
@@ -295,6 +335,8 @@ class GUIGameView(arcade.View):
         Normally, you'll call update() on the sprite lists that
         need it.
         """
+        if self.game_phase == 0:
+            self.menu_phase()
         if self.game_phase == 1:
             self.bet_phase()
         elif self.game_phase == 2:
@@ -306,6 +348,17 @@ class GUIGameView(arcade.View):
         elif self.game_phase == 5:
             self.evaluation_phase()
 
+    def menu_phase(self):
+        if not self.send_input:
+            return
+
+        if self.gui_menu_action == GUI_MENU_ACTIONS["Start Round"]:
+            self.game_phase += 1
+            self.send_input = False
+            self.gui_menu_action = None
+            self.remove_widgets()
+        elif self.gui_menu_action == GUI_MENU_ACTIONS["Exit"]:
+            exit(0)
 
     def bet_phase(self):
         if self.active_player_index is None:
@@ -372,15 +425,15 @@ class GUIGameView(arcade.View):
     def deal_cards_phase(self):
         self.gamestate_manager.init_round_cards()
         
-        # DEBUG TO TEST SPLIT
-        from Blackjack.Cards import Card
-        test_cards = []
-        for test_card in self.gamestate_manager.playable_carddeck:
-            if test_card.unique_id in ["0SpadesJ", "0HeartsJ"]:
-                test_cards.append(test_card)
-        self.gamestate_manager.player_list[-1].cards = test_cards
-        # self.gamestate_manager.player_list[-1].ace_counts = 1
-        self.gamestate_manager.player_list[-1].print_hand()
+        # # DEBUG TO TEST SPLIT
+        # from Blackjack.Cards import Card
+        # test_cards = []
+        # for test_card in self.gamestate_manager.playable_carddeck:
+        #     if test_card.unique_id in ["0SpadesJ", "0HeartsJ"]:
+        #         test_cards.append(test_card)
+        # self.gamestate_manager.player_list[-1].cards = test_cards
+        # # self.gamestate_manager.player_list[-1].ace_counts = 1
+        # self.gamestate_manager.player_list[-1].print_hand()
         
         # start from index 1 to handle dealer seperately
         for i in range(1, len(self.player_list)+1):
@@ -449,6 +502,8 @@ class GUIGameView(arcade.View):
             current_player = self.player_list[self.active_player_index]
             if current_player not in self.gamestate_manager.current_playing_players:
                 self.active_player_index += 1
+                self.update_mats_color(self.player_mats_list[self.active_player_index],True)
+                self.update_mats_color(self.player_mats_list[self.active_player_index+1],False)
                 self.check_player_index()
                 return
         
@@ -541,6 +596,9 @@ class GUIGameView(arcade.View):
                 if self.active_player_index < len(self.player_list):    
                     # mark cards for next player
                     self.update_mats_color(self.player_mats_list[self.active_player_index+1], False)
+                # else mark dealer cards
+                else:
+                    self.update_mats_color(self.player_mats_list[0], False)
 
             elif turn_finished:
                 # recreate original card color for the last player
@@ -690,20 +748,29 @@ class GUIGameView(arcade.View):
         For a full list of keys, see:
         https://api.arcade.academy/en/latest/arcade.key.html
         """
-        if key == arcade.key.SPACE:
-            # # TODO: make depending on currently playing player / valid check
-            # pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            # pile.position = self.player_mats_list[0][-1].position[0] + self.MAT_X_OFFSET, self.player_mats_list[0][-1].position[1]
-            # self.pile_mat_list.append(pile)
-            # self.player_mats_list[0].append(pile)
-            # print("APPENDING NEW PILE")
+        # if key == arcade.key.SPACE:
+        #     # # TODO: make depending on currently playing player / valid check
+        #     # pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+        #     # pile.position = self.player_mats_list[0][-1].position[0] + self.MAT_X_OFFSET, self.player_mats_list[0][-1].position[1]
+        #     # self.pile_mat_list.append(pile)
+        #     # self.player_mats_list[0].append(pile)
+        #     # print("APPENDING NEW PILE")
 
-            self.game_phase += 1
+        #     self.game_phase += 1
 
         if key == arcade.key.ENTER:
             if self.input_active:
                 self.send_input = True
             
+
+    def add_menu_widget(self):
+        self.input_active = True
+        self.ui_manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                child=self.menu_option_box)
+        )
 
     def add_bet_input_field_widget(self):
         self.input_active = True
@@ -711,7 +778,7 @@ class GUIGameView(arcade.View):
             arcade.gui.UIAnchorWidget(
                 anchor_x="center_x",
                 anchor_y="center_y",
-                child=self.v_box)
+                child=self.bet_widget_box)
         )
 
     def add_player_turn_action_field_widget(self):

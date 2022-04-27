@@ -10,7 +10,11 @@ VERTICAL_MARGIN_PERCENT = 0.05
 HORIZONTAL_MARGIN_PERCENT = 0.05
 
 Y_MARGIN = 0.05
-# NUMBER_OF_HANDS_PER_SIDE = int(TOP_Y / MAT_Y_OFFSET)
+
+GUI_MENU_ACTIONS = {
+    "Start Round" : 0,
+    "Exit": 1
+}
 
 def calculate_gui_constants(CARD_SCALE, SCREEN_HEIGHT):
     # How big are the cards?
