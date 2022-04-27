@@ -61,7 +61,7 @@ class GUIGameView(arcade.View):
 
     def setup(self, player_list):
         """ Set up the game variables. Call to re-start the game. """
-        self.ui_manager.clear()
+        self.remove_widgets()
         self.ui_manager.enable()
         
         self.game_phase = 0
@@ -74,11 +74,14 @@ class GUIGameView(arcade.View):
         # reset gamestate manager
         if self.gamestate_manager is not None:
             self.gamestate_manager.clean_round()
+            # overwrite player list if there are players in the actual game (backend)
+            if player_list is None and self.gamestate_manager.current_playing_players:
+                player_list = self.gamestate_manager.current_playing_players
 
         if not player_list:
             raise RuntimeError("There were no players specified") 
         
-        self.player_list = player_list
+        self.player_list = list(player_list)
         self.player_text_list = []
         # prepare a list for every player (for convenient access and adding of mats)
         self.player_mats_list = [[] for _ in range(len(player_list)+1)]
@@ -261,8 +264,29 @@ class GUIGameView(arcade.View):
         size_hint_min=(400, 300)
         )    
 
+        result_option_button = UIFlatButton(
+            color=arcade.color.DARK_BLUE_GRAY,
+            text="Start next round")
+        # Handle Clicks
+        @result_option_button.event("on_click")
+        def on_click_flatbutton(event):
+            self.handle_end_of_round()
+            self.remove_widgets()
+            self.game_phase = 1
+
+        result_option_button_1 = UIFlatButton(
+            color=arcade.color.DARK_BLUE_GRAY,
+            text="Return to start menu")
+        # Handle Clicks
+        @result_option_button_1.event("on_click")
+        def on_click_flatbutton(event):
+            self.handle_end_of_round()
+        
+
         self.results_widget_box.add(label)
         self.results_widget_box.add(results_text)
+        self.results_widget_box.add(result_option_button)
+        self.results_widget_box.add(result_option_button_1)
         # endregion
 
         # prepare ui box for menu buttons
@@ -762,6 +786,10 @@ class GUIGameView(arcade.View):
             if self.input_active:
                 self.send_input = True
             
+    def handle_end_of_round(self):
+        # make dealer mats color normal
+        self.update_mats_color(self.player_mats_list[0], True)
+        self.setup(None)
 
     def add_menu_widget(self):
         self.input_active = True
@@ -801,8 +829,8 @@ class GUIGameView(arcade.View):
 
     def add_results_widget(self, text):
         self.input_active = True
-        self.results_widget_box.children[-1].text = text
-        self.results_widget_box.children[-1].fit_content()
+        self.results_widget_box.children[1].text = text
+        self.results_widget_box.children[1].fit_content()
 
         self.ui_manager.add(
             arcade.gui.UIAnchorWidget(
