@@ -57,6 +57,8 @@ class Player(ABC) :
 
     def lose_round(self):
         print("Player {} losing bet: {}".format(self.name, self.current_bet))
+        self.current_bet = 0
+        # self.clear_cards()
     
     def tie_round(self):
         print("Player {} tie --> keeping bet: {}".format(self.name, self.current_bet))

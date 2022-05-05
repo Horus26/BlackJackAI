@@ -138,7 +138,9 @@ class GamestateManager :
         while(self.dealer.make_turn()):
             self.dealer.add_card(self.get_random_card())
 
-    def evaluate_dealt_cards(self):
+    def evaluate_dealt_cards(self, return_winning_players = False):
+        winning_player_list = []
+        
         # get dealer hand value
         dealer_base_hand_value = self.dealer.get_hand_value()
         dealer_blackjack = True if dealer_base_hand_value == 21 else False
@@ -151,14 +153,18 @@ class GamestateManager :
             player_blackjack = (player.get_hand_value() == 21)
             if dealer_blackjack and not player_blackjack:
                 player.lose_round()
+                self.current_playing_players.remove(player)
             elif dealer_blackjack and player_blackjack:
-                player.tie_round()
+                win = player.tie_round()
+                winning_player_list.append((player, win))
             elif player_blackjack:
                 player.dealt_cards_blackjack()
                 self.current_playing_players.remove(player)
 
-
-        return dealer_blackjack
+        if return_winning_players:
+            return dealer_blackjack, winning_player_list
+        else:
+            return dealer_blackjack
 
             
     def get_valid_player_actions(self, player):
@@ -204,7 +210,6 @@ class GamestateManager :
         
         return turn_finished, split_player
 
-    
     def execute_player_turn_action(self, player, turn_action):
         # evaluate turn
         if turn_action == PLAYER_ACTIONS["Hit"]: 
@@ -222,39 +227,6 @@ class GamestateManager :
         
         # else player action stand which results in no action (else case exists as emergency exit in case of failure)
         else: return (True, None)
-
-    # def player_turn(self, player, turn_action, split_allowed = True):
-    #         # get new hand value
-    #         hand_value = player.get_hand_value()
-    #         # check if player has no options left
-    #         if hand_value >= 21: return hand_value
-            
-    #         # use while for waiting for a valid turn to reduce number of recursions
-    #         valid_turn = False
-    #         double_down = False
-    #         while(not valid_turn):
-    #             # ask player for turn action
-    #             player_turn_action = player.make_turn()
-
-    #             # evaluate turn
-    #             if player_turn_action == PLAYER_ACTIONS["Hit"]: valid_turn = self.hit(player)
-    #             elif player_turn_action == PLAYER_ACTIONS["Double"]: 
-    #                 # after double down player gets one card and must stand after
-    #                 valid_turn = self.double(player)
-    #                 if valid_turn: return player.get_hand_value()
-
-    #              # two seperate if statements because of else case
-    #             elif player_turn_action == PLAYER_ACTIONS["Split"]: 
-    #                 if split_allowed: valid_turn = self.split(player)
-    #                 else: print("Resplitting not allowed")
-    #                 if valid_turn: split_allowed = False
-    #             # else player action stand which results in no action
-    #             else: return player.get_hand_value()
-
-            
-
-    #         # recursion
-    #         return self.player_turn(player, split_allowed)
 
     def hit(self, player):
         card = self.get_random_card()

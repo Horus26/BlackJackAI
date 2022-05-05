@@ -474,9 +474,9 @@ class GUIGameView(arcade.View):
             self.card_list.append(GUI_card)
             self.card_dict_data_access[cards[1].unique_id] = GUI_card
         
-        # DEBUG TO TEST DEALER BLACKJACK
+        # # DEBUG TO TEST DEALER BLACKJACK
         # from Blackjack.Cards import Card
-        # self.gamestate_manager.dealer.cards = [Card(u'\u2660' + "J", 10, u'\u2660', "J", "Spades"), Card(u'\u2660' + "A", 1, u'\u2660', "A", "Spades")]
+        # self.gamestate_manager.dealer.cards = [Card(u'\u2660' + "J", 10, u'\u2660', "J", "Spades", str(0) + "Spades" + "J"), Card(u'\u2660' + "A", 1, u'\u2660', "A", "Spades", str(0) + "Spades" + "A")]
         # self.gamestate_manager.dealer.ace_counts = 1
         # self.gamestate_manager.dealer.print_hand(second_card_visible=True)
 
@@ -495,13 +495,13 @@ class GUIGameView(arcade.View):
         self.card_list.append(GUI_card)
 
         
-        dealer_blackjack = self.gamestate_manager.evaluate_dealt_cards()
+        dealer_blackjack, winning_player_list = self.gamestate_manager.evaluate_dealt_cards(True)
 
-        # TODO: GUI HANDLE DEALER BLACKJACK INSTEAD OF EXITING GAME
-        
+        # GUI HANDLE DEALER BLACKJACK 
         if dealer_blackjack:
             print("DEALER BLACKJACK")
-            exit(10)
+            self.dealer_blackjack_evaluation(winning_player_list)
+            return
 
         
         # update name and money
@@ -649,8 +649,6 @@ class GUIGameView(arcade.View):
             self.pile_mat_list.append(new_mat)
             player_mats_list.append(new_mat)
 
-        e=1
-
     def check_player_index(self):
         if self.active_player_index == len(self.player_list):
             self.active_player_index = None
@@ -749,21 +747,40 @@ class GUIGameView(arcade.View):
     def evaluation_phase(self):
         # HANDLE EVALUATION AND GUI
         winning_player_list = self.gamestate_manager.evaluate_round() 
+        self.display_evaluation_on_gui(winning_player_list)
+        self.game_phase += 1
+
+    def dealer_blackjack_evaluation(self, winning_player_list):
+        # display second dealer card
+        dealer_mats = self.player_mats_list[0]
+        self.update_gui_player(self.gamestate_manager.dealer.cards, dealer_mats)
+        # mark dealer cards
+        self.update_mats_color(self.player_mats_list[0], False)
+        # unmark cards of first player
+        self.update_mats_color(self.player_mats_list[1], True)
+        # display evaluation
+        self.display_evaluation_on_gui(winning_player_list)
+        self.game_phase = 6
+
+    def display_evaluation_on_gui(self, winning_player_list):
         results_string_list = []
         for i, (player, player_win) in enumerate(winning_player_list):
             print("\n{} Win: {}".format(player.name, player_win))
             results_string_list += ["\n"]
             results_string_list += ["{} Win: {}".format(player.name, player_win)]
+            # mark cards of winning players
+            player_index = self.player_list.index(player)
+            self.update_mats_color(self.player_mats_list[player_index + 1], False)
 
         if len(results_string_list) == 0:
-            results_string_list = ["Dealer wins\n No players left that did not go bust"]
+            results_string_list = ["Dealer wins\n No players left"]
         
         results_string_list += ["\n"]
         print("FINAL STRING: {}".format(results_string_list))
         self.add_results_widget(''.join(results_string_list))
-
+        # update player name lines to correctly display money
         self.update_player_name_line()
-        self.game_phase += 1
+
 
     def on_key_press(self, key, key_modifiers):
         """
@@ -772,15 +789,6 @@ class GUIGameView(arcade.View):
         For a full list of keys, see:
         https://api.arcade.academy/en/latest/arcade.key.html
         """
-        # if key == arcade.key.SPACE:
-        #     # # TODO: make depending on currently playing player / valid check
-        #     # pile = arcade.SpriteSolidColor(self.MAT_WIDTH, self.MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-        #     # pile.position = self.player_mats_list[0][-1].position[0] + self.MAT_X_OFFSET, self.player_mats_list[0][-1].position[1]
-        #     # self.pile_mat_list.append(pile)
-        #     # self.player_mats_list[0].append(pile)
-        #     # print("APPENDING NEW PILE")
-
-        #     self.game_phase += 1
 
         if key == arcade.key.ENTER:
             if self.input_active:
@@ -790,6 +798,8 @@ class GUIGameView(arcade.View):
         # make dealer mats color normal
         self.update_mats_color(self.player_mats_list[0], True)
         self.setup(None)
+        # update player name lines to correctly display money
+        self.update_player_name_line()
 
     def add_menu_widget(self):
         self.input_active = True
